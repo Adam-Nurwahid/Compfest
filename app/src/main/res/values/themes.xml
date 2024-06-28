@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.SeaSalon" parent="Theme.Material3.DayNight.NoActionBar">
+      <item name="colorPrimary">@color/gold</item>
+    </style>
+
+    <style name="Theme.SeaSalon" parent="Base.Theme.SeaSalon" />
+
+    <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/dark_gold</item>
+    </style>
+    <style name="MyRatingBar" parent="Widget.AppCompat.RatingBar">
+
+        <!--  Non selected color -->
+        <item name="colorControlNormal">@color/light_gold</item>
+
+        <!--   Selected color -->
+        <item name="colorControlActivated">@color/gold</item>
+    </style>
+
+
+</resources>

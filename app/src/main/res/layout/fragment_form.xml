@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.adam.seasalon.ui.FormFragment">
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="16dp">-->
+
+<!--        <EditText-->
+<!--            android:id="@+id/editTextNama"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:hint="Nama"-->
+<!--            android:inputType="textPersonName"/>-->
+
+<!--        <EditText-->
+<!--            android:id="@+id/editTextTelepon"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:hint="Nomor Telepon"-->
+<!--            android:inputType="phone"/>-->
+
+<!--        <Spinner-->
+<!--            android:id="@+id/spinnerTipePelayanan"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:hint="Tipe Pelayanan"-->
+<!--            android:entries="@array/tipe_pelayanan"/>-->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jam dan Tanggal"/>
+
+<!--        <DatePicker-->
+<!--            and roid:id="@+id/datePicker"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"/>-->
+
+<!--        &lt;!&ndash; Implementasi custom NumberPicker &ndash;&gt;-->
+<!--        <FrameLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content">-->
+
+<!--            <NumberPicker-->
+<!--                android:id="@+id/hourPicker"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:gravity="center"/>-->
+
+<!--        </FrameLayout>-->
+
+<!--        <Button-->
+<!--            android:id="@+id/buttonSubmit"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Daftar"-->
+<!--            android:onClick="submitReservation"/>-->
+
+<!--    </LinearLayout>-->
+
+</LinearLayout>

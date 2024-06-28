@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "434366680208",
+    "project_id": "seasalon-e6167",
+    "storage_bucket": "seasalon-e6167.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:434366680208:android:c7c0360cbad74a496b1c15",
+        "android_client_info": {
+          "package_name": "com.adam.seasalon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfgNOrxCvbkJAeLdZlPsu9dzicmHbZu2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
