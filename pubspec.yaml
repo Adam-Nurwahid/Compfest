@@ -34,6 +34,19 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # --- CORE STATE MANAGEMENT ---
+  flutter_bloc: ^8.1.3      # State management utama untuk memisahkan UI dan Logika Bisnis
+  equatable: ^2.0.5         # Mempermudah perbandingan state BLoC agar tidak memicu rebuild UI yang sia-sia
+
+  # --- BACKEND & AUTENTIKASI ---
+  supabase_flutter: ^2.8.0  # SDK Resmi Supabase (Mengurusi Auth, Database, & Realtime Stream)
+
+  # --- UI & STYLING ---
+  google_fonts: ^6.2.1      # Wajib untuk merender font Plus Jakarta Sans pada app_theme.dart kamu
+
+  # --- UTILITIES & ARCHITECTURE ---
+  get_it: ^7.6.0            # Service Locator untuk Dependency Injection (DI) agar arsitektur kode bersih
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
