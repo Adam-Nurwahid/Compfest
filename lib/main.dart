@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
-import 'core/constants/app_router.dart';
+import 'core/routing/app_router.dart';
 import 'data/dummy/app_state.dart';
 
 void main() async {

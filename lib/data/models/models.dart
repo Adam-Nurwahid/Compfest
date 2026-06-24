@@ -1,5 +1,26 @@
+class User {
+  final String id;
+  final String name;
+  final String email;
+  final String username;
+  final String password;
+  final List<String> roles; // e.g. ['Buyer', 'Seller']
+  String activeRole; // Currently active role in the session
+
+  User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.username,
+    required this.password,
+    required this.roles,
+    required this.activeRole,
+  });
+}
+
 class Store {
   final String id;
+  final String ownerId; // Owner User ID
   final String name;
   final String location;
   final String logoUrl;
@@ -8,6 +29,7 @@ class Store {
 
   Store({
     required this.id,
+    required this.ownerId,
     required this.name,
     required this.location,
     required this.logoUrl,
@@ -174,6 +196,9 @@ class Order {
   final int finalTotal;
   String status; // 'Sedang Dikemas', 'Menunggu Pengirim', 'Sedang Dikirim', 'Pesanan Selesai', 'Dikembalikan'
   final List<OrderMilestone> statusTimeline;
+  String? assignedDriverId;
+  final String pickupAddress;
+  final String dropoffAddress;
 
   Order({
     required this.id,
@@ -189,6 +214,9 @@ class Order {
     required this.finalTotal,
     required this.status,
     required this.statusTimeline,
+    this.assignedDriverId,
+    required this.pickupAddress,
+    required this.dropoffAddress,
   });
 }
 

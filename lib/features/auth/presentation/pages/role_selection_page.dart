@@ -44,52 +44,57 @@ class RoleSelectionPage extends StatelessWidget {
               Expanded(
                 child: ListView(
                   children: [
-                    _buildRoleCard(
-                      context,
-                      title: 'Buyer (Pembeli)',
-                      description: 'Mencari perlengkapan laut premium, nelayan pancing, berlayar, checkout produk dari seller terpercaya.',
-                      icon: Icons.shopping_bag_outlined,
-                      isActive: appState.activeRole == 'Buyer',
-                      onTap: () {
-                        appState.setActiveRole('Buyer');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Masuk sebagai Pembeli')),
-                        );
-                        context.go('/landing');
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    _buildRoleCard(
-                      context,
-                      title: 'Seller (Penjual)',
-                      description: 'Kelola toko laut Anda, update inventaris produk pancing/berlayar, kelola pesanan masuk dari pembeli.',
-                      icon: Icons.storefront_outlined,
-                      isActive: appState.activeRole == 'Seller',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Seller dinonaktifkan di demo ini. Silakan pilih Buyer.'),
-                            backgroundColor: AppColors.secondary,
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    _buildRoleCard(
-                      context,
-                      title: 'Driver / Kurir Laut',
-                      description: 'Terima penugasan pengiriman barang kelautan antar pulau/dermaga. Pantau rute logistik.',
-                      icon: Icons.sailing_outlined,
-                      isActive: appState.activeRole == 'Driver',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Driver dinonaktifkan di demo ini. Silakan pilih Buyer.'),
-                            backgroundColor: AppColors.secondary,
-                          ),
-                        );
-                      },
-                    ),
+                    if (appState.availableRoles.contains('Buyer')) ...[
+                      _buildRoleCard(
+                        context,
+                        title: 'Buyer (Pembeli)',
+                        description: 'Mencari perlengkapan laut premium, nelayan pancing, berlayar, checkout produk dari seller terpercaya.',
+                        icon: Icons.shopping_bag_outlined,
+                        isActive: appState.activeRole == 'Buyer',
+                        onTap: () {
+                          appState.setActiveRole('Buyer');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Masuk sebagai Pembeli')),
+                          );
+                          context.go('/landing');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    if (appState.availableRoles.contains('Seller')) ...[
+                      _buildRoleCard(
+                        context,
+                        title: 'Seller (Penjual)',
+                        description: 'Kelola toko laut Anda, update inventaris produk pancing/berlayar, kelola pesanan masuk dari pembeli.',
+                        icon: Icons.storefront_outlined,
+                        isActive: appState.activeRole == 'Seller',
+                        onTap: () {
+                          appState.setActiveRole('Seller');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Masuk sebagai Penjual (Seller Mode)')),
+                          );
+                          context.go('/seller/dashboard');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    if (appState.availableRoles.contains('Driver')) ...[
+                      _buildRoleCard(
+                        context,
+                        title: 'Driver / Kurir Laut',
+                        description: 'Terima penugasan pengiriman barang kelautan antar pulau/dermaga. Pantau rute logistik.',
+                        icon: Icons.sailing_outlined,
+                        isActive: appState.activeRole == 'Driver',
+                        onTap: () {
+                          appState.setActiveRole('Driver');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Masuk sebagai Driver')),
+                          );
+                          context.go('/driver/find-jobs');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ],
                 ),
               ),

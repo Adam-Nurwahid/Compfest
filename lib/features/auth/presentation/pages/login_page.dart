@@ -38,19 +38,37 @@ class _LoginPageState extends State<LoginPage> {
           _isLoading = false;
         });
 
-        // Set logged in state
         final appState = Provider.of<AppState>(context, listen: false);
-        appState.login(_emailController.text, _passwordController.text);
+        final success = appState.login(_emailController.text, _passwordController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login berhasil! Silakan pilih role Anda.'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login berhasil!'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
 
-        // Redirect to Role Selection
-        context.go('/role-selection');
+          // Route based on available roles
+          if (appState.currentUser!.roles.length > 1) {
+            context.go('/role-selection');
+          } else {
+            if (appState.activeRole == 'Seller') {
+              context.go('/seller/dashboard');
+            } else if (appState.activeRole == 'Driver') {
+              context.go('/driver/find-jobs');
+            } else {
+              context.go('/landing');
+            }
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Username/Email atau password salah! (Gunakan andi/budi/chandra/dedi dengan password123)'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
       }
     });
   }
@@ -190,7 +208,52 @@ class _LoginPageState extends State<LoginPage> {
                       context.go('/landing');
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
+
+                  // Demo Login Helper Section
+                  Text(
+                    'Akun Demo (Klik untuk Autofill):',
+                    style: AppTextStyles.label.copyWith(fontSize: 12, color: AppColors.neutral),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ActionChip(
+                        label: const Text('Buyer/Seller (Andi)'),
+                        onPressed: () {
+                          _emailController.text = 'andi@seapedia.com';
+                          _passwordController.text = 'password123';
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('Seller Only (Budi)'),
+                        onPressed: () {
+                          _emailController.text = 'budi@seapedia.com';
+                          _passwordController.text = 'password123';
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('All Roles (Chandra)'),
+                        onPressed: () {
+                          _emailController.text = 'chandra@seapedia.com';
+                          _passwordController.text = 'password123';
+                        },
+                        backgroundColor: AppColors.tertiary.withOpacity(0.5),
+                      ),
+                      ActionChip(
+                        label: const Text('Driver Only (Dedi)'),
+                        onPressed: () {
+                          _emailController.text = 'dedi@seapedia.com';
+                          _passwordController.text = 'password123';
+                        },
+                        backgroundColor: AppColors.secondary.withOpacity(0.2),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
                   // Footer Register Link
                   Row(

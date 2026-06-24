@@ -4,32 +4,112 @@ import 'dummy_data.dart';
 
 class AppState extends ChangeNotifier {
   // --- AUTH STATE ---
+  User? _currentUser;
   bool _isLoggedIn = false;
   String _activeRole = 'Guest'; // 'Guest', 'Buyer', 'Seller', 'Driver'
-  final List<String> _availableRoles = ['Buyer', 'Seller', 'Driver'];
 
+  User? get currentUser => _currentUser;
   bool get isLoggedIn => _isLoggedIn;
   String get activeRole => _activeRole;
-  List<String> get availableRoles => _availableRoles;
+  List<String> get availableRoles => _currentUser?.roles ?? [];
 
-  void login(String username, String password) {
-    // Simulated simple login
-    _isLoggedIn = true;
-    _activeRole = 'Buyer'; // Default role is Buyer
-    notifyListeners();
+  bool login(String username, String password) {
+    // TODO: replace with real API call
+    final normalized = username.toLowerCase().trim();
+    try {
+      final user = dummyUsers.firstWhere(
+        (u) => u.email.toLowerCase() == normalized || u.username.toLowerCase() == normalized,
+      );
+      if (user.password == password) {
+        _currentUser = user;
+        _isLoggedIn = true;
+        _activeRole = user.roles.first;
+        notifyListeners();
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   void logout() {
+    // TODO: replace with real API call
     _isLoggedIn = false;
+    _currentUser = null;
     _activeRole = 'Guest';
     _cartItems.clear(); // Clear cart on logout
     notifyListeners();
   }
 
   void setActiveRole(String role) {
-    if (_isLoggedIn && _availableRoles.contains(role)) {
+    if (_isLoggedIn && _currentUser != null && _currentUser!.roles.contains(role)) {
       _activeRole = role;
       notifyListeners();
+    }
+  }
+
+  // --- STORE HELPER (Seller) ---
+  Store? get currentUserStore {
+    if (_currentUser == null) return null;
+    try {
+      return dummyStores.firstWhere((store) => store.ownerId == _currentUser!.id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // --- STORE MANAGEMENT (Seller) ---
+  void createStore(Store store) {
+    // TODO: replace with real API call
+    dummyStores.add(store);
+    notifyListeners();
+  }
+
+  void updateStore(Store updatedStore) {
+    // TODO: replace with real API call
+    final index = dummyStores.indexWhere((s) => s.id == updatedStore.id);
+    if (index != -1) {
+      dummyStores[index] = updatedStore;
+      notifyListeners();
+    }
+  }
+
+  // --- PRODUCT MANAGEMENT CRUD (Seller) ---
+  void addProduct(Product product) {
+    // TODO: replace with real API call
+    dummyProducts.add(product);
+    notifyListeners();
+  }
+
+  void updateProduct(Product updatedProduct) {
+    // TODO: replace with real API call
+    final index = dummyProducts.indexWhere((p) => p.id == updatedProduct.id);
+    if (index != -1) {
+      dummyProducts[index] = updatedProduct;
+      notifyListeners();
+    }
+  }
+
+  void deleteProduct(String productId) {
+    // TODO: replace with real API call
+    dummyProducts.removeWhere((p) => p.id == productId);
+    notifyListeners();
+  }
+
+  // --- ORDER PROCESSING (Seller) ---
+  void processOrder(String orderId) {
+    // TODO: replace with real API call
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final order = _orders[index];
+      if (order.status == 'Sedang Dikemas') {
+        order.status = 'Menunggu Pengirim';
+        order.statusTimeline.add(OrderMilestone(
+          status: 'Menunggu Pengirim',
+          timestamp: DateTime.now(),
+          description: 'Pesanan siap diambil kurir. Penjual telah memproses pesanan.',
+        ));
+        notifyListeners();
+      }
     }
   }
 
@@ -292,6 +372,78 @@ class AppState extends ChangeNotifier {
   }
 
   // --- ORDERS STATE ---
+  // --- DRIVER STATE ---
+  bool _isDriverOnline = true;
+  bool get isDriverOnline => _isDriverOnline;
+
+  void toggleDriverOnline() {
+    _isDriverOnline = !_isDriverOnline;
+    notifyListeners();
+  }
+
+  double getDriverEarningPercentage(String method) {
+    // Instant: 80%, Next Day: 70%, Regular/others: 60%
+    switch (method.toLowerCase()) {
+      case 'instant':
+        return 0.8;
+      case 'next day':
+        return 0.7;
+      case 'regular':
+      default:
+        return 0.6;
+    }
+  }
+
+  int calculateDriverEarning(Order order) {
+    final pct = getDriverEarningPercentage(order.deliveryMethod);
+    return (order.deliveryFee * pct).round();
+  }
+
+  // Take a job (Find Available Jobs -> Active Job)
+  bool takeJob(String orderId, String driverId) {
+    // Business Rule: A driver can only have 1 active job at a time
+    final hasActiveJob = _orders.any((o) => o.assignedDriverId == driverId && o.status == 'Sedang Dikirim');
+    if (hasActiveJob) {
+      return false;
+    }
+
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final order = _orders[index];
+      // Defensive check: order must be 'Menunggu Pengirim' and have no driver assigned
+      if (order.status == 'Menunggu Pengirim' && order.assignedDriverId == null) {
+        order.assignedDriverId = driverId;
+        order.status = 'Sedang Dikirim';
+        order.statusTimeline.add(OrderMilestone(
+          status: 'Sedang Dikirim',
+          timestamp: DateTime.now(),
+          description: 'Pesanan telah diambil oleh kurir dan sedang dalam perjalanan ke alamat Anda.',
+        ));
+        notifyListeners();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Complete a job (Active Job -> History)
+  void completeJob(String orderId) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final order = _orders[index];
+      if (order.status == 'Sedang Dikirim') {
+        order.status = 'Pesanan Selesai';
+        order.statusTimeline.add(OrderMilestone(
+          status: 'Pesanan Selesai',
+          timestamp: DateTime.now(),
+          description: 'Pesanan selesai diserahkan ke penerima oleh kurir.',
+        ));
+        notifyListeners();
+      }
+    }
+  }
+
+  // --- ORDERS STATE ---
   final List<Order> _orders = List.from(dummyOrders);
 
   List<Order> get orders => _orders;
@@ -345,6 +497,9 @@ class AppState extends ChangeNotifier {
           description: 'Pesanan telah berhasil dibayar. Seller sedang memproses kemasan.',
         ),
       ],
+      assignedDriverId: null,
+      pickupAddress: '${store.name} - ${store.location}',
+      dropoffAddress: address.fullAddress,
     );
 
     // Deduct Wallet

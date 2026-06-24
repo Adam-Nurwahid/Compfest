@@ -1,9 +1,50 @@
 import '../models/models.dart';
 
+// List dummy users
+final List<User> dummyUsers = [
+  User(
+    id: 'user_a',
+    name: 'Andi Kusuma',
+    email: 'andi@seapedia.com',
+    username: 'andi',
+    password: 'password123',
+    roles: ['Buyer', 'Seller'],
+    activeRole: 'Buyer',
+  ),
+  User(
+    id: 'user_b',
+    name: 'Budi Santoso',
+    email: 'budi@seapedia.com',
+    username: 'budi',
+    password: 'password123',
+    roles: ['Seller'],
+    activeRole: 'Seller',
+  ),
+  User(
+    id: 'user_c',
+    name: 'Chandra Wijaya',
+    email: 'chandra@seapedia.com',
+    username: 'chandra',
+    password: 'password123',
+    roles: ['Buyer', 'Seller', 'Driver'], // Updated to include Buyer and Driver
+    activeRole: 'Seller',
+  ),
+  User(
+    id: 'user_d',
+    name: 'Dedi Kurniawan',
+    email: 'dedi@seapedia.com',
+    username: 'dedi',
+    password: 'password123',
+    roles: ['Driver'],
+    activeRole: 'Driver',
+  ),
+];
+
 // List dummy store
 final List<Store> dummyStores = [
   Store(
     id: 'store_1',
+    ownerId: 'user_a',
     name: 'Oceanic Diving Gear',
     location: 'Jakarta Utara',
     logoUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=100&auto=format&fit=crop',
@@ -12,6 +53,7 @@ final List<Store> dummyStores = [
   ),
   Store(
     id: 'store_2',
+    ownerId: 'user_c',
     name: 'North Wind Sailing',
     location: 'Surabaya',
     logoUrl: 'https://images.unsplash.com/photo-1505244208262-19137ac24634?w=100&auto=format&fit=crop',
@@ -20,6 +62,7 @@ final List<Store> dummyStores = [
   ),
   Store(
     id: 'store_3',
+    ownerId: 'user_b',
     name: 'Bluefin Elite Fishing',
     location: 'Bali',
     logoUrl: 'https://images.unsplash.com/photo-1517462964-21fdcec3f25b?w=100&auto=format&fit=crop',
@@ -331,6 +374,9 @@ final List<Order> dummyOrders = [
       OrderMilestone(status: 'Sedang Dikirim', timestamp: DateTime.now().subtract(const Duration(days: 3)), description: 'Kurir sedang dalam perjalanan ke alamat tujuan.'),
       OrderMilestone(status: 'Pesanan Selesai', timestamp: DateTime.now().subtract(const Duration(days: 2)), description: 'Pesanan telah diterima oleh pembeli.'),
     ],
+    assignedDriverId: 'user_d',
+    pickupAddress: 'Oceanic Diving Gear - Jakarta Utara',
+    dropoffAddress: 'Perumahan Marina Indah Blok A1 No. 5, Jl. Pantai Indah Kapuk, Penjaringan, Jakarta Utara, DKI Jakarta, 14470',
   ),
   Order(
     id: 'ORD-20260621-002',
@@ -357,6 +403,9 @@ final List<Order> dummyOrders = [
       OrderMilestone(status: 'Menunggu Pengirim', timestamp: DateTime.now().subtract(const Duration(days: 1)), description: 'Kurir GoSend/GrabExpress bersiap mengambil paket.'),
       OrderMilestone(status: 'Sedang Dikirim', timestamp: DateTime.now().subtract(const Duration(hours: 4)), description: 'Paket sedang dibawa oleh kurir menuju alamat Anda.'),
     ],
+    assignedDriverId: 'user_d',
+    pickupAddress: 'North Wind Sailing - Surabaya',
+    dropoffAddress: 'Perumahan Marina Indah Blok A1 No. 5, Jl. Pantai Indah Kapuk, Penjaringan, Jakarta Utara, DKI Jakarta, 14470',
   ),
   Order(
     id: 'ORD-20260622-003',
@@ -381,6 +430,9 @@ final List<Order> dummyOrders = [
     statusTimeline: [
       OrderMilestone(status: 'Sedang Dikemas', timestamp: DateTime.now().subtract(const Duration(hours: 12)), description: 'Pesanan terkonfirmasi. Seller sedang mempersiapkan barang.'),
     ],
+    assignedDriverId: null,
+    pickupAddress: 'Bluefin Elite Fishing - Bali',
+    dropoffAddress: 'Perumahan Marina Indah Blok A1 No. 5, Jl. Pantai Indah Kapuk, Penjaringan, Jakarta Utara, DKI Jakarta, 14470',
   ),
   Order(
     id: 'ORD-20260623-004',
@@ -408,6 +460,9 @@ final List<Order> dummyOrders = [
       OrderMilestone(status: 'Sedang Dikirim', timestamp: DateTime.now().subtract(const Duration(days: 8)), description: 'Pengiriman gagal karena alamat kantor tutup/tidak dapat dihubungi.'),
       OrderMilestone(status: 'Dikembalikan', timestamp: DateTime.now().subtract(const Duration(days: 7)), description: 'Pesanan dikembalikan ke seller (Refund diproses).'),
     ],
+    assignedDriverId: 'user_d',
+    pickupAddress: 'Bluefin Elite Fishing - Bali',
+    dropoffAddress: 'Gedung Kelautan Nusantara Lt. 12, Jl. Sudirman Kav 21, Karet Semanggi, Jakarta Selatan, DKI Jakarta, 12930',
   ),
   Order(
     id: 'ORD-20260624-005',
@@ -433,5 +488,8 @@ final List<Order> dummyOrders = [
       OrderMilestone(status: 'Sedang Dikemas', timestamp: DateTime.now().subtract(const Duration(hours: 18)), description: 'Barang selesai dibungkus rapi.'),
       OrderMilestone(status: 'Menunggu Pengirim', timestamp: DateTime.now().subtract(const Duration(hours: 2)), description: 'Menunggu penjemputan oleh kurir JNE/SiCepat.'),
     ],
+    assignedDriverId: null,
+    pickupAddress: 'Oceanic Diving Gear - Jakarta Utara',
+    dropoffAddress: 'Perumahan Marina Indah Blok A1 No. 5, Jl. Pantai Indah Kapuk, Penjaringan, Jakarta Utara, DKI Jakarta, 14470',
   ),
 ];
