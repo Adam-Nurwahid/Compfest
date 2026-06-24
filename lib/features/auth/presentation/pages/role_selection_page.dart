@@ -44,6 +44,23 @@ class RoleSelectionPage extends StatelessWidget {
               Expanded(
                 child: ListView(
                   children: [
+                    if (appState.availableRoles.contains('Admin')) ...[
+                      _buildRoleCard(
+                        context,
+                        title: 'Admin (Sistem)',
+                        description: 'Kelola data SEAPEDIA secara menyeluruh: pantau pengguna, toko, produk, pesanan, voucher, promo, dan pesanan overdue.',
+                        icon: Icons.admin_panel_settings_outlined,
+                        isActive: appState.activeRole == 'Admin',
+                        onTap: () {
+                          appState.setActiveRole('Admin');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Masuk sebagai Admin')),
+                          );
+                          context.go('/admin/dashboard');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                     if (appState.availableRoles.contains('Buyer')) ...[
                       _buildRoleCard(
                         context,

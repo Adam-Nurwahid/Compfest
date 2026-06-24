@@ -3,6 +3,15 @@ import '../models/models.dart';
 // List dummy users
 final List<User> dummyUsers = [
   User(
+    id: 'user_admin',
+    name: 'Administrator',
+    email: 'admin@seapedia.com',
+    username: 'admin',
+    password: 'password123',
+    roles: ['Admin', 'Buyer', 'Seller', 'Driver'],
+    activeRole: 'Admin',
+  ),
+  User(
     id: 'user_a',
     name: 'Andi Kusuma',
     email: 'andi@seapedia.com',

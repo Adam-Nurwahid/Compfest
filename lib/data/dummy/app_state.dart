@@ -300,6 +300,27 @@ class AppState extends ChangeNotifier {
   List<Voucher> get vouchers => _vouchers;
   List<Promo> get promos => _promos;
 
+  void addVoucher(Voucher voucher) {
+    // Check if code already exists, if so overwrite or ignore
+    final index = _vouchers.indexWhere((v) => v.code == voucher.code.toUpperCase().trim());
+    if (index == -1) {
+      _vouchers.add(voucher);
+    } else {
+      _vouchers[index] = voucher;
+    }
+    notifyListeners();
+  }
+
+  void addPromo(Promo promo) {
+    final index = _promos.indexWhere((p) => p.code == promo.code.toUpperCase().trim());
+    if (index == -1) {
+      _promos.add(promo);
+    } else {
+      _promos[index] = promo;
+    }
+    notifyListeners();
+  }
+
   // Validate Voucher. Returns Map with status, message, and discount calculation
   Map<String, dynamic> validateVoucher(String code, int subtotal) {
     final normalizedCode = code.toUpperCase().trim();
@@ -545,6 +566,29 @@ class AppState extends ChangeNotifier {
         status: nextStatus,
         timestamp: DateTime.now(),
         description: desc,
+      ));
+      notifyListeners();
+    }
+  }
+
+  // --- SIMULATION & OVERDUE ---
+  DateTime _simulatedDateTime = DateTime.now();
+  DateTime get simulatedDateTime => _simulatedDateTime;
+
+  void simulateNextDay() {
+    _simulatedDateTime = _simulatedDateTime.add(const Duration(days: 1));
+    notifyListeners();
+  }
+
+  void processRefund(String orderId) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final o = _orders[index];
+      o.status = 'Dikembalikan';
+      o.statusTimeline.add(OrderMilestone(
+        status: 'Dikembalikan',
+        timestamp: _simulatedDateTime,
+        description: 'Pesanan dibatalkan & dana dikembalikan (refund) oleh Admin karena keterlambatan pengiriman (SLA terlampaui).',
       ));
       notifyListeners();
     }

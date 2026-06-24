@@ -26,6 +26,9 @@ import '../../features/seller/presentation/pages/seller_store_page.dart';
 import '../../features/driver/presentation/pages/driver_navigation_shell.dart';
 import '../../features/driver/presentation/pages/driver_job_detail_page.dart';
 
+// Admin Pages
+import '../../features/admin/presentation/pages/admin_shell.dart';
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/landing',
   routes: [
@@ -275,6 +278,71 @@ final GoRouter appRouter = GoRouter(
           child: DriverJobDetailPage(orderId: orderId),
         );
       },
+    ),
+
+    // --- ADMIN FEATURES ---
+    GoRoute(
+      path: '/admin/dashboard',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 0),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/users',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 1),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/stores',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 2),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/products',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 3),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/orders',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 4),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/vouchers',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 5),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/promos',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 6),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/deliveries',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 7),
+      ),
+    ),
+    GoRoute(
+      path: '/admin/overdue',
+      builder: (context, state) => const RoleGuard(
+        requiredRole: 'Admin',
+        child: AdminMainNavigationShell(initialTab: 8),
+      ),
     ),
   ],
 );
