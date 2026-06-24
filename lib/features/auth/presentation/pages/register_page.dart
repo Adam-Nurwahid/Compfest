@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/reusable_widgets.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -9,131 +11,141 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  bool _agreeToTerms = false;
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleRegister() {
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Semua field wajib diisi!'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan login.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+
+        context.go('/login');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: CustomAppBar(
+        title: 'Daftar Akun',
+        onBackPress: () => context.go('/login'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Text(
-                  'Join the Voyage',
-                  style: AppTextStyles.headlineLarge,
-                ),
+              Text(
+                'Buat Akun Baru',
+                style: AppTextStyles.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Create your account to explore the ocean marketplace.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyMedium,
-                ),
+              Text(
+                'Gabung bersama SEAPEDIA untuk transaksi kelautan terlengkap.',
+                style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 32),
 
-              // Form Input Formations
-              _buildInputField('Full Name', 'John Doe', 'Legal name as it appears on your ID.', Icons.person_outline),
-              _buildInputField('Username', 'seafarer_24', 'At least 4 characters, unique to you.', Icons.alternate_email),
-              _buildInputField('Email Address', 'example@ocean.com', 'Verification link will be sent here.', Icons.mail_outline),
-              _buildInputField('Phone Number', '+1(555) 000-0000', 'For secure two-factor authentication.', Icons.phone_android),
-              _buildInputField('Password', '••••••••', 'Minimum 8 characters with numbers & symbols.', Icons.lock_outline, isPassword: true),
-              _buildInputField('Confirm Password', '••••••••', 'Please re-enter your password.', Icons.verified_user_outlined, isPassword: true),
+              // Inputs
+              AppTextField(
+                label: 'Nama Lengkap',
+                hintText: 'Masukkan nama lengkap Anda',
+                controller: _nameController,
+                prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.neutral),
+              ),
+              const SizedBox(height: 20),
 
-              const SizedBox(height: 16),
-              // Checkbox Persetujuan
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _agreeToTerms,
-                    activeColor: AppColors.primary,
-                    onChanged: (value) {
-                      setState(() {
-                        _agreeToTerms = value ?? false;
-                      });
-                    },
+              AppTextField(
+                label: 'Email',
+                hintText: 'contoh: andi@seapedia.com',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.alternate_email_rounded, color: AppColors.neutral),
+              ),
+              const SizedBox(height: 20),
+
+              AppTextField(
+                label: 'Kata Sandi',
+                hintText: 'Masukkan kata sandi baru',
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.neutral),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    color: AppColors.neutral,
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: RichText(
-                        text: TextSpan(
-                          style: AppTextStyles.bodyMedium,
-                          children: [
-                            const TextSpan(text: 'I agree to the '),
-                            TextSpan(text: 'Terms of Service ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                            const TextSpan(text: 'and '),
-                            TextSpan(text: 'Privacy Policy ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                            const TextSpan(text: 'of SEAPEDIA.'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: 32),
 
               // Register Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: AppButtonStyles.primary.copyWith(
-                    backgroundColor: WidgetStateProperty.all(AppColors.secondary),
-                  ),
-                  onPressed: _agreeToTerms ? () {
-                    Navigator.pop(context); // Kembali ke login setelah sukses simulasi
-                  } : null,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Create Account', style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 16)),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward, color: Colors.white),
-                    ],
-                  ),
-                ),
+              AppButton(
+                text: 'Daftar Sekarang',
+                isLoading: _isLoading,
+                onPressed: _handleRegister,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+
+              // Footer Login Link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Sudah punya akun? ', style: AppTextStyles.bodyMedium),
+                  GestureDetector(
+                    onTap: () => context.go('/login'),
+                    child: Text(
+                      'Masuk di Sini',
+                      style: AppTextStyles.label.copyWith(color: AppColors.primary),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Widget Builder Kecil untuk Input Field (Composition)
-  Widget _buildInputField(String label, String hint, String subLabel, IconData icon, {bool isPassword = false}) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          TextField(
-            obscureText: isPassword,
-            decoration: InputDecoration(
-              hintText: hint,
-              prefixIcon: Icon(icon),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(subLabel, style: AppTextStyles.bodyMedium.copyWith(fontSize: 12)),
-        ],
       ),
     );
   }

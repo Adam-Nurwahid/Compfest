@@ -1,10 +1,17 @@
-import 'package:compfest/features/auth/presentation/pages/login_page.dart';
 import 'package:flutter/material.dart';
-import 'package:compfest/core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'core/theme/app_theme.dart';
+import 'core/constants/app_router.dart';
+import 'data/dummy/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AppState(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,11 +19,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Compfest App',
+    return MaterialApp.router(
+      title: 'SEAPEDIA',
       theme: AppTheme.light,
-      themeMode: ThemeMode.system,
-      home: LoginPage()
+      themeMode: ThemeMode.light, // Locked to light theme for brand consistency in demo
+      routerConfig: appRouter,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

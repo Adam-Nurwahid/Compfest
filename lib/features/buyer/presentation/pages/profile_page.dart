@@ -1,296 +1,290 @@
-import 'package:compfest/features/auth/presentation/pages/role_selection_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../data/dummy/app_state.dart';
 
-
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  String _activeRole = 'Buyer'; // Simulasi peran aktif saat ini [cite: 120]
-
-  @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
+    // If not logged in, show Guest login prompt
+    if (!appState.isLoggedIn) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text('Profil Saya', style: AppTextStyles.headlineMedium.copyWith(fontSize: 20)),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: AppColors.border, height: 1.0),
+          ),
+        ),
+        body: EmptyState(
+          title: 'Belum Masuk Akun',
+          message: 'Silakan masuk ke akun SEAPEDIA Anda untuk mengelola alamat, pesanan, dan wallet.',
+          icon: Icons.account_circle_outlined,
+          buttonText: 'Masuk Akun',
+          onButtonPressed: () {
+            context.go('/login');
+          },
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          'SEAPEDIA',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.primary,
-            letterSpacing: 1.0,
-            fontSize: 20,
+        title: Text('Profil Saya', style: AppTextStyles.headlineMedium.copyWith(fontSize: 20)),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Fitur Pengaturan dinonaktifkan di demo ini.')),
+              );
+            },
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: AppColors.border, height: 1.0),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          child: Column(
+            children: [
+              // 1. User Header card
+              _buildUserCard(context, appState),
+              const SizedBox(height: 20),
+
+              // 2. Wallet Card
+              _buildWalletCard(context, appState),
+              const SizedBox(height: 28),
+
+              // 3. Menu list
+              _buildMenuSection(context, appState),
+              const SizedBox(height: 32),
+
+              // 4. Logout Button
+              AppButton(
+                text: 'Keluar dari Akun',
+                styleType: ButtonStyleType.outlined,
+                onPressed: () {
+                  appState.logout();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Logout berhasil.')),
+                  );
+                  context.go('/landing');
+                },
+              ),
+            ],
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 1. Avatar dengan Badge Terverifikasi
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                CircleAvatar(
-                  radius: 54,
-                  backgroundColor: AppColors.primary.withOpacity(0.2),
-                  child: const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey,
-                    // Menggunakan ikon jangkar sebagai placeholder avatar maritim
-                    child: Icon(Icons.anchor, size: 50, color: Colors.white),
-                  ),
-                ),
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: AppColors.secondary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.verified,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 2. Info Nama & Username
-            Text(
-              'Budi Samudra',
-              style: AppTextStyles.headlineMedium.copyWith(fontSize: 24),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '@budisea',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral),
-            ),
-            const SizedBox(height: 16),
-
-            // 3. Indikator Peran Aktif & Tombol Switch
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.person, color: Colors.white, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Active Role: $_activeRole',
-                        style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () {
-                    // Navigasi ke halaman pemilihan peran yang sudah dibuat sebelumnya
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
-                    );
-                  },
-                  child: Text(
-                    'Switch Role',
-                    style: AppTextStyles.label.copyWith(color: AppColors.primary),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // 4. Tombol Tab Seleksi Peran Cepat
-            Row(
-              children: [
-                _buildRoleTab('Buyer', Icons.shopping_cart, _activeRole == 'Buyer'),
-                const SizedBox(width: 8),
-                _buildRoleTab('Seller', Icons.storefront, _activeRole == 'Seller'),
-                const SizedBox(width: 8),
-                _buildRoleTab('Driver', Icons.moped, _activeRole == 'Driver'),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // 5. Kartu Informasi Keuangan (Total Balance)
-            _buildBalanceCard(),
-            const SizedBox(height: 32),
-
-            // 6. Section Account Settings
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Account Settings',
-                style: AppTextStyles.label.copyWith(color: AppColors.neutral, fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Daftar Menu Pengaturan (Composition Menu Tiles)
-            _buildMenuTile(Icons.edit_outlined, 'Edit Profile'),
-            _buildMenuTile(Icons.location_on_outlined, 'Addresses'),
-            _buildMenuTile(Icons.security, 'Security & Password'),
-            _buildMenuTile(Icons.notifications_none, 'Notifications'),
-            _buildMenuTile(Icons.help_outline, 'Help Center'),
-
-            // Tombol Logout Khusus
-            _buildMenuTile(
-              Icons.logout,
-              'Logout',
-              textColor: AppColors.danger,
-              iconColor: AppColors.danger,
-              showTrailing: false,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  // Komponen Tab Peran
-  Widget _buildRoleTab(String role, IconData icon, bool isSelected) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.tertiary.withOpacity(0.4),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isSelected ? Colors.white : AppColors.textPrimary, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              role,
-              style: AppTextStyles.label.copyWith(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Komponen Ringkasan Saldo Finansial
-  Widget _buildBalanceCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildUserCard(BuildContext context, AppState appState) {
+    return AppCard(
+      radius: 20,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.tertiary,
+            child: const Icon(Icons.person, size: 36, color: AppColors.primary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'TOTAL BALANCE',
-                  style: AppTextStyles.label.copyWith(color: AppColors.neutral, fontSize: 13, letterSpacing: 0.5),
+                  'Andi Kusuma',
+                  style: AppTextStyles.label.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.account_balance_wallet, color: AppColors.secondary, size: 20),
-                )
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Role: ${appState.activeRole}',
+                        style: AppTextStyles.label.copyWith(fontSize: 11, color: AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Rp 2.500.000',
-              style: AppTextStyles.headlineLarge.copyWith(color: AppColors.primary, fontSize: 28),
-            ),
-            const SizedBox(height: 20),
-
-            // Sub-Balance Breakdowns
-            _buildSubBalanceItem('Wallet', 'Rp 500.000'),
-            const SizedBox(height: 12),
-            _buildSubBalanceItem('Seller Income', 'Rp 1.200.000'),
-            const SizedBox(height: 12),
-            _buildSubBalanceItem('Driver Earnings', 'Rp 800.000'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubBalanceItem(String label, String amount) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
-          Text(amount, style: AppTextStyles.label.copyWith(fontSize: 15)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: AppColors.secondary),
+            tooltip: 'Ganti Role',
+            onPressed: () {
+              context.push('/role-selection');
+            },
+          ),
         ],
       ),
     );
   }
 
-  // Komponen Menu Pengaturan (List Tile Custom)
-  Widget _buildMenuTile(
-      IconData leadingIcon,
-      String title, {
-        Color? textColor,
-        Color? iconColor,
-        bool showTrailing = true,
-      }) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border.withOpacity(0.4)),
+  Widget _buildWalletCard(BuildContext context, AppState appState) {
+    final formattedBalance = appState.walletBalance
+        .toString()
+        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.secondary, AppColors.secondaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: AppColors.background,
-            child: Icon(leadingIcon, color: iconColor ?? AppColors.primary, size: 20),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-          title: Text(
-            title,
-            style: AppTextStyles.label.copyWith(
-              color: textColor ?? AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'SEA-Wallet Saldo',
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () => context.push('/wallet'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Detail',
+                    style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 11),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Rp$formattedBalance',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
-          trailing: showTrailing
-              ? const Icon(Icons.chevron_right, color: AppColors.neutral, size: 20)
-              : null,
-          onTap: () {
-            // Logika aksi menu
-          },
-        ),
+          const SizedBox(height: 8),
+          Text(
+            'Gunakan saldo untuk transaksi kelautan instan tanpa biaya admin.',
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildMenuSection(BuildContext context, AppState appState) {
+    return AppCard(
+      radius: 20,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildMenuItem(
+            icon: Icons.location_on_outlined,
+            title: 'Daftar Alamat Pengiriman',
+            subtitle: 'Atur alamat utama dan sekunder Anda',
+            onTap: () => context.push('/addresses'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _buildMenuItem(
+            icon: Icons.history_rounded,
+            title: 'Riwayat Pesanan',
+            subtitle: 'Pantau pengiriman dan status transaksi',
+            onTap: () => context.push('/orders'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _buildMenuItem(
+            icon: Icons.bar_chart_rounded,
+            title: 'Laporan Pengeluaran',
+            subtitle: 'Analisis dan grafik pengeluaran bulanan',
+            onTap: () => context.push('/report'),
+          ),
+          const Divider(height: 1, indent: 56),
+          _buildMenuItem(
+            icon: Icons.rate_review_outlined,
+            title: 'Beri Ulasan Aplikasi',
+            subtitle: 'Beri masukan demi perkembangan SEAPEDIA',
+            onTap: () => context.push('/submit-review'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.tertiary.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: AppColors.primary, size: 20),
+      ),
+      title: Text(
+        title,
+        style: AppTextStyles.label.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: AppTextStyles.bodyMedium.copyWith(fontSize: 11),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.neutral),
+      onTap: onTap,
     );
   }
 }

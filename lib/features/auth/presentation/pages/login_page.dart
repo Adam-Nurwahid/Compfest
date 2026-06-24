@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'register_page.dart';
-import '../../../buyer/presentation/pages/main_navigation_shell.dart';
+import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../data/dummy/app_state.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,179 +13,202 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController(text: 'andi@seapedia.com');
+  final _passwordController = TextEditingController(text: 'password123');
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simulate network delay
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Set logged in state
+        final appState = Provider.of<AppState>(context, listen: false);
+        appState.login(_emailController.text, _passwordController.text);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login berhasil! Silakan pilih role Anda.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+
+        // Redirect to Role Selection
+        context.go('/role-selection');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              // Logo Placeholder (Sailboat Icon)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.tertiary.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.sailing,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'SEAPEDIA',
-                style: AppTextStyles.headlineLarge.copyWith(
-                  color: AppColors.primary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Selamat Datang Kembali',
-                style: AppTextStyles.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Jelajahi keajaiban laut hari ini.',
-                style: AppTextStyles.bodyMedium,
-              ),
-              const SizedBox(height: 40),
-
-              // Form Inputs
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Email atau Username', style: AppTextStyles.label),
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'nama@email.com',
-                      prefixIcon: const Icon(Icons.alternate_email),
+                  // Logo Container
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.tertiary.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Icon(
+                      Icons.sailing_rounded,
+                      size: 64,
+                      color: AppColors.primary,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Text('Kata Sandi', style: AppTextStyles.label),
+                  const SizedBox(height: 16),
+                  Text(
+                    'SEAPEDIA',
+                    style: AppTextStyles.headlineLarge.copyWith(
+                      color: AppColors.primary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  TextField(
+                  Text(
+                    'Marketplace Kelautan Multi-Seller',
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral),
+                  ),
+                  const SizedBox(height: 32),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Masuk Akun',
+                      style: AppTextStyles.headlineMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Silakan masuk untuk melanjutkan transaksi Anda',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Inputs
+                  AppTextField(
+                    label: 'Email atau Username',
+                    hintText: 'contoh: andi@seapedia.com',
+                    controller: _emailController,
+                    prefixIcon: const Icon(Icons.alternate_email_rounded, color: AppColors.neutral),
+                  ),
+                  const SizedBox(height: 20),
+
+                  AppTextField(
+                    label: 'Kata Sandi',
+                    hintText: 'Masukkan kata sandi Anda',
+                    controller: _passwordController,
                     obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      hintText: '••••••••',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.neutral),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: AppColors.neutral,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+
+                  // Lupa Kata Sandi
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fitur lupa kata sandi dinonaktifkan di versi demo.'),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Lupa Kata Sandi?',
+                        style: AppTextStyles.label.copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),
-                ],
-              ),
+                  const SizedBox(height: 12),
 
-              // Forgot Password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Lupa Kata Sandi?',
-                    style: AppTextStyles.label.copyWith(color: AppColors.primary),
+                  // Login Button
+                  AppButton(
+                    text: 'Masuk Sekarang',
+                    isLoading: _isLoading,
+                    onPressed: _handleLogin,
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-              // Login Button (Orange matching Wireframe)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: AppButtonStyles.primary.copyWith(
-                    backgroundColor: WidgetStateProperty.all(AppColors.secondary),
+                  // Divider
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: AppColors.border)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text('ATAU GUEST', style: AppTextStyles.bodyMedium.copyWith(fontSize: 12)),
+                      ),
+                      const Expanded(child: Divider(color: AppColors.border)),
+                    ],
                   ),
-                  onPressed: () {
-                    // Berpindah ke Halaman Utama setelah Login
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainNavigationShell()),
-                    );
-                  },
-                  child: Text(
-                    'Login',
-                    style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-              // Divider Opsi "ATAU"
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('ATAU', style: AppTextStyles.bodyMedium),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Social Media Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: AppButtonStyles.outlined,
-                      onPressed: () {},
-                      icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
-                      label: const Text('Google'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: AppButtonStyles.outlined,
-                      onPressed: () {},
-                      icon: const Icon(Icons.facebook, color: Colors.blue),
-                      label: const Text('Facebook'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Footer Register Link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Belum punya akun? ', style: AppTextStyles.bodyMedium),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                      );
+                  // Guest Button
+                  AppButton(
+                    text: 'Jelajahi Sebagai Guest',
+                    styleType: ButtonStyleType.outlined,
+                    onPressed: () {
+                      // Navigate directly to landing page
+                      context.go('/landing');
                     },
-                    child: Text(
-                      'Daftar Sekarang',
-                      style: AppTextStyles.label.copyWith(color: AppColors.primary),
-                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Footer Register Link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Belum punya akun? ', style: AppTextStyles.bodyMedium),
+                      GestureDetector(
+                        onTap: () => context.push('/register'),
+                        child: Text(
+                          'Daftar Sekarang',
+                          style: AppTextStyles.label.copyWith(color: AppColors.primary),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

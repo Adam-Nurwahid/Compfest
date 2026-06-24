@@ -47,6 +47,8 @@ dependencies:
   # --- UTILITIES & ARCHITECTURE ---
   get_it: ^7.6.0            # Service Locator untuk Dependency Injection (DI) agar arsitektur kode bersih
   intl: ^0.19.0
+  provider: ^6.1.2
+  go_router: ^14.2.1
 
 dev_dependencies:
   flutter_test:

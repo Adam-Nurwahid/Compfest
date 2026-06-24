@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../buyer/presentation/pages/main_navigation_shell.dart';
+import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../data/dummy/app_state.dart';
 
-class RoleSelectionPage extends StatefulWidget {
+class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
 
   @override
-  State<RoleSelectionPage> createState() => _RoleSelectionPageState();
-}
-
-class _RoleSelectionPageState extends State<RoleSelectionPage> {
-  String _selectedRole = 'buyer'; // Default terpilah ke buyer
-
-  @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
+    // Redirect to login if user somehow navigates here without logging in
+    if (!appState.isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/login');
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -24,91 +30,78 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             children: [
               const SizedBox(height: 20),
               Text(
-                'SEAPEDIA',
-                style: AppTextStyles.headlineMedium.copyWith(
-                  color: AppColors.primary,
-                  letterSpacing: 1.0,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Masuk sebagai apa hari ini?',
-                style: AppTextStyles.headlineLarge.copyWith(fontSize: 28),
+                'Pilih Role Anda',
+                style: AppTextStyles.headlineLarge.copyWith(color: AppColors.primary),
               ),
               const SizedBox(height: 8),
               Text(
-                'Pilih peran Anda untuk melanjutkan aktivitas.',
+                'Akun Anda memiliki akses ke beberapa peran. Silakan pilih untuk masuk ke dashboard yang sesuai.',
                 style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 32),
 
-              // Daftar Kartu Pilihan Peran (Composition Components)
-              _buildRoleCard(
-                roleKey: 'buyer',
-                title: 'Buyer',
-                description: 'Belanja berbagai kebutuhan maritim.',
-                icon: Icons.shopping_bag_outlined,
-                iconColor: AppColors.primary,
-                bgColor: const Color(0xFFE6F4F4),
-              ),
-              const SizedBox(height: 16),
-              _buildRoleCard(
-                roleKey: 'seller',
-                title: 'Seller',
-                description: 'Mulai berjualan dan kelola tokomu.',
-                icon: Icons.storefront_outlined,
-                iconColor: const Color(0xFF6C5CE7),
-                bgColor: const Color(0xFFEFEFFA),
-              ),
-              const SizedBox(height: 16),
-              _buildRoleCard(
-                roleKey: 'driver',
-                title: 'Driver',
-                description: 'Kirim pesanan dan dapatkan penghasilan.',
-                icon: Icons.moped_outlined,
-                iconColor: AppColors.secondary,
-                bgColor: const Color(0xFFFFF2EE),
-              ),
-
-              const Spacer(),
-
-              // Tombol Konfirmasi Continue
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: AppButtonStyles.primary.copyWith(
-                    backgroundColor: WidgetStateProperty.all(AppColors.secondary),
-                  ),
-                  onPressed: () {
-                    // Pindah ke halaman utama aplikasi setelah memilih peran
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainNavigationShell()),
-                          (route) => false,
-                    );
-                  },
-                  child: Text(
-                    'Continue',
-                    style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Informasi Footer bawah
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              // Role Options
+              Expanded(
+                child: ListView(
                   children: [
-                    const Icon(Icons.info_outline, size: 16, color: AppColors.neutral),
-                    const SizedBox(width: 8),
-                    Text(
-                      'You can switch roles anytime from your profile.',
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 13),
+                    _buildRoleCard(
+                      context,
+                      title: 'Buyer (Pembeli)',
+                      description: 'Mencari perlengkapan laut premium, nelayan pancing, berlayar, checkout produk dari seller terpercaya.',
+                      icon: Icons.shopping_bag_outlined,
+                      isActive: appState.activeRole == 'Buyer',
+                      onTap: () {
+                        appState.setActiveRole('Buyer');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Masuk sebagai Pembeli')),
+                        );
+                        context.go('/landing');
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildRoleCard(
+                      context,
+                      title: 'Seller (Penjual)',
+                      description: 'Kelola toko laut Anda, update inventaris produk pancing/berlayar, kelola pesanan masuk dari pembeli.',
+                      icon: Icons.storefront_outlined,
+                      isActive: appState.activeRole == 'Seller',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fitur Seller dinonaktifkan di demo ini. Silakan pilih Buyer.'),
+                            backgroundColor: AppColors.secondary,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildRoleCard(
+                      context,
+                      title: 'Driver / Kurir Laut',
+                      description: 'Terima penugasan pengiriman barang kelautan antar pulau/dermaga. Pantau rute logistik.',
+                      icon: Icons.sailing_outlined,
+                      isActive: appState.activeRole == 'Driver',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fitur Driver dinonaktifkan di demo ini. Silakan pilih Buyer.'),
+                            backgroundColor: AppColors.secondary,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
+              ),
+
+              // Footer Logout
+              AppButton(
+                text: 'Keluar Akun',
+                styleType: ButtonStyleType.outlined,
+                onPressed: () {
+                  appState.logout();
+                  context.go('/login');
+                },
               ),
             ],
           ),
@@ -117,69 +110,72 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     );
   }
 
-  // Komponen Kartu Opsi Peran Berbasis Komposisi Widget
-  Widget _buildRoleCard({
-    required String roleKey,
+  Widget _buildRoleCard(
+    BuildContext context, {
     required String title,
     required String description,
     required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
+    required bool isActive,
+    required VoidCallback onTap,
   }) {
-    final isSelected = _selectedRole == roleKey;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedRole = roleKey;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
+    return AppCard(
+      onTap: onTap,
+      color: isActive ? AppColors.tertiary.withOpacity(0.4) : AppColors.surface,
+      radius: 20,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon Container
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.primary : AppColors.tertiary.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: isActive ? Colors.white : AppColors.primary,
+            ),
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ] : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 28),
+          const SizedBox(width: 16),
+          // Content text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.label.copyWith(
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isActive)
+                      const Icon(
+                        Icons.check_circle,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTextStyles.label.copyWith(fontSize: 16)),
-                  const SizedBox(height: 4),
-                  Text(description, style: AppTextStyles.bodyMedium),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const CircleAvatar(
-                radius: 10,
-                backgroundColor: AppColors.primary,
-                child: Icon(Icons.check, color: Colors.white, size: 12),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

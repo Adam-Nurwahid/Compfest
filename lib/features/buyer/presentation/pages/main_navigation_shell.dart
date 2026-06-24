@@ -1,23 +1,34 @@
-import 'package:compfest/features/buyer/presentation/pages/cart_page.dart';
-import 'package:compfest/features/buyer/presentation/pages/catalog_page.dart';
-import 'package:compfest/features/buyer/presentation/pages/profile_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'home_page.dart';
+import '../../../../data/dummy/app_state.dart';
+import '../../../landing/landing_page.dart';
+import 'cart_page.dart';
+import 'catalog_page.dart';
+import 'profile_page.dart';
 
 class MainNavigationShell extends StatefulWidget {
-  const MainNavigationShell({super.key});
+  final int initialTab;
+
+  const MainNavigationShell({super.key, this.initialTab = 0});
 
   @override
   State<MainNavigationShell> createState() => _MainNavigationShellState();
 }
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
-  // List halaman untuk navigasi bottom bar
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialTab;
+  }
+
+  // Keep pages in IndexedStack to preserve scrolling state
   final List<Widget> _pages = [
-    const HomePage(),
+    const LandingPage(),
     const CatalogPage(),
     const CartPage(),
     const ProfilePage(),
@@ -25,24 +36,66 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final cartItemCount = appState.cartItems.fold(0, (sum, item) => sum + item.quantity);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view_outlined), activeIcon: Icon(Icons.grid_view), label: 'Catalog'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Login'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: const Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.neutral,
+          selectedLabelStyle: AppTextStyles.label.copyWith(fontSize: 12, color: AppColors.primary),
+          unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.neutral),
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home, color: AppColors.primary),
+              label: 'Beranda',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.grid_view_outlined),
+              activeIcon: Icon(Icons.grid_view, color: AppColors.primary),
+              label: 'Katalog',
+            ),
+            BottomNavigationBarItem(
+              icon: Badge(
+                label: cartItemCount > 0 ? Text(cartItemCount.toString()) : null,
+                isLabelVisible: cartItemCount > 0,
+                backgroundColor: AppColors.secondary,
+                child: const Icon(Icons.shopping_cart_outlined),
+              ),
+              activeIcon: Badge(
+                label: cartItemCount > 0 ? Text(cartItemCount.toString()) : null,
+                isLabelVisible: cartItemCount > 0,
+                backgroundColor: AppColors.secondary,
+                child: const Icon(Icons.shopping_cart, color: AppColors.primary),
+              ),
+              label: 'Keranjang',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person, color: AppColors.primary),
+              label: appState.isLoggedIn ? 'Profil' : 'Masuk',
+            ),
+          ],
+        ),
       ),
     );
   }

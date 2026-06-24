@@ -1,198 +1,312 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../data/dummy/app_state.dart';
+import '../../../../data/dummy/dummy_data.dart';
+import '../../../../data/models/models.dart';
 
 class ProductDetailPage extends StatelessWidget {
-  const ProductDetailPage({super.key});
+  final String productId;
+
+  const ProductDetailPage({super.key, required this.productId});
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
+    // Find the product in dummy list
+    final product = dummyProducts.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => dummyProducts.first,
+    );
+
+    // Find the store
+    final store = dummyStores.firstWhere(
+      (s) => s.id == product.storeId,
+      orElse: () => dummyStores.first,
+    );
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+      backgroundColor: AppColors.background,
+      appBar: CustomAppBar(
+        title: 'Detail Produk',
         actions: [
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.favorite_border), onPressed: () {}),
-          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textPrimary),
+            onPressed: () => context.go('/cart'),
+          ),
         ],
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Gambar Utama Produk Besar + Indikator Slide
-                Container(
-                  height: 260,
-                  width: double.infinity,
-                  color: AppColors.background,
-                  child: const Center(child: Icon(Icons.sailing, size: 120, color: AppColors.primary)),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(height: 8, width: 8, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    Container(height: 8, width: 8, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
-                    const SizedBox(width: 4),
-                    Container(height: 8, width: 8, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
+                    // 1. Product Image
+                    Container(
+                      width: double.infinity,
+                      height: 280,
+                      decoration: const BoxDecoration(
+                        color: AppColors.tertiary,
+                      ),
+                      child: Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Icons.image_outlined, size: 80, color: AppColors.primary),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // 2. Info Block
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Price & Stock row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Rp${product.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                                style: AppTextStyles.headlineMedium.copyWith(
+                                  color: AppColors.secondary,
+                                  fontSize: 24,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: product.stock > 0 ? AppColors.tertiary : AppColors.danger.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  product.stock > 0 ? 'Stok: ${product.stock}' : 'Stok Habis',
+                                  style: AppTextStyles.label.copyWith(
+                                    fontSize: 12,
+                                    color: product.stock > 0 ? AppColors.primary : AppColors.danger,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Product Name
+                          Text(
+                            product.name,
+                            style: AppTextStyles.headlineMedium.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Rating and category row
+                          Row(
+                            children: [
+                              RatingStars(rating: product.rating, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${product.rating} (${product.reviewCount} ulasan)',
+                                style: AppTextStyles.bodyMedium.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                              const Spacer(),
+                              Chip(
+                                label: Text(
+                                  product.category,
+                                  style: AppTextStyles.label.copyWith(fontSize: 11, color: AppColors.primary),
+                                ),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 32),
+
+                          // 3. Store Block
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: AppColors.tertiary,
+                                backgroundImage: NetworkImage(store.logoUrl),
+                                onBackgroundImageError: (_, __) {},
+                                child: const Icon(Icons.storefront, color: AppColors.primary),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      store.name,
+                                      style: AppTextStyles.label.copyWith(fontSize: 15, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      store.location,
+                                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  textStyle: AppTextStyles.label.copyWith(fontSize: 12),
+                                ),
+                                onPressed: () {
+                                  context.push('/store/${store.id}');
+                                },
+                                child: const Text('Kunjungi Toko'),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 32),
+
+                          // 4. Description Block
+                          Text(
+                            'Deskripsi Produk',
+                            style: AppTextStyles.label.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            product.description,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              height: 1.6,
+                              color: AppColors.textPrimary.withOpacity(0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-
-                // 2. Konten Detail Judul dan Harga
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('OceanMaster Elite Saltwater Spinning Reel', style: AppTextStyles.headlineMedium.copyWith(fontSize: 22)),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text('\$249.99', style: AppTextStyles.headlineMedium.copyWith(color: AppColors.secondary, fontSize: 26)),
-                          const SizedBox(width: 12),
-                          Text('\$299.00', style: AppTextStyles.bodyMedium.copyWith(decoration: TextDecoration.lineThrough, fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Row(children: List.generate(5, (_) => const Icon(Icons.star, color: Colors.amber, size: 16))),
-                          const SizedBox(width: 6),
-                          Text('4.8', style: AppTextStyles.label.copyWith(fontSize: 14)),
-                          Text(' (124 Reviews)', style: AppTextStyles.bodyMedium),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 3. Spanduk Ringkasan Informasi Toko Penjual
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiary.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            const CircleAvatar(backgroundColor: AppColors.primary, child: Icon(Icons.anchor, color: Colors.white)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Marine Pro Gear', style: AppTextStyles.label),
-                                  Text('Verified Merchant', style: AppTextStyles.bodyMedium.copyWith(fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            OutlinedButton(
-                              style: AppButtonStyles.outlined.copyWith(padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
-                              onPressed: () {},
-                              child: const Text('Visit Store'),
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 4. Deskripsi Produk
-                      Text('Product Description', style: AppTextStyles.label.copyWith(fontSize: 16)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Designed for the ultimate ocean enthusiast, the OceanMaster Elite offers unparalleled durability in harsh saltwater environments. Features a fully sealed drag system and carbon fiber construction for maximum strength without the weight.',
-                        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary.withOpacity(0.8), fontSize: 14),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 5. Tabel Spesifikasi Komposisi Dropdown Accordion
-                      ExpansionTile(
-                        title: Text('Specifications', style: AppTextStyles.label.copyWith(fontSize: 16)),
-                        tilePadding: EdgeInsets.zero,
-                        children: [
-                          _buildSpecRow('Gear Ratio', '6.2:1'),
-                          _buildSpecRow('Max Drag', '22 lbs'),
-                          _buildSpecRow('Weight', '9.4 oz'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // 6. Floating Action Bottom Bar dengan Kunci Akses Tamu (Guest Lock Overlay)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            ),
+
+            // Bottom Buy Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: const Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+              ),
+              child: Row(
                 children: [
-                  // Tombol Utama Login To Purchase
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: AppButtonStyles.primary.copyWith(backgroundColor: WidgetStateProperty.all(const Color(0xFFE6F4F4)), foregroundColor: WidgetStateProperty.all(AppColors.primary)),
-                      onPressed: () {},
-                      icon: const Icon(Icons.lock_outline, size: 18),
-                      label: Text('Login to purchase', style: AppTextStyles.label.copyWith(color: AppColors.primary)),
+                  // Chat button
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Fitur chat ke seller dinonaktifkan di demo ini.')),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Tombol Beli yang terarsir pudar karena status guest biasa
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          style: AppButtonStyles.outlined.copyWith(foregroundColor: WidgetStateProperty.all(Colors.grey.shade400)),
-                          onPressed: null, // Disabled
-                          icon: const Icon(Icons.add_shopping_cart),
-                          label: const Text('Add to Cart'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: AppButtonStyles.primary.copyWith(backgroundColor: WidgetStateProperty.all(AppColors.secondary.withOpacity(0.4))),
-                          onPressed: null, // Disabled
-                          child: const Text('Buy Now'),
-                        ),
-                      ),
-                    ],
-                  )
+                  const SizedBox(width: 16),
+
+                  // Add to Cart
+                  Expanded(
+                    child: AppButton(
+                      text: 'Tambah ke Keranjang',
+                      onPressed: product.stock > 0
+                          ? () {
+                              _handleAddToCart(context, appState, product, store);
+                            }
+                          : null, // Disabled if stock is 0
+                    ),
+                  ),
                 ],
               ),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSpecRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: AppTextStyles.bodyMedium),
-          Text(value, style: AppTextStyles.label),
-        ],
-      ),
-    );
+  void _handleAddToCart(BuildContext context, AppState appState, Product product, Store store) {
+    // 1. Check logged in
+    if (!appState.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda harus masuk sebagai Pembeli terlebih dahulu.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+      context.go('/login');
+      return;
+    }
+
+    // 2. Add to Cart
+    final success = appState.addToCart(product);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} berhasil ditambahkan ke keranjang.'),
+          backgroundColor: AppColors.primary,
+          action: SnackBarAction(
+            label: 'Lihat',
+            textColor: Colors.white,
+            onPressed: () => context.go('/cart'),
+          ),
+        ),
+      );
+    } else {
+      // Store conflict! Show warning dialog
+      final existingStoreName = appState.cartStore?.name ?? 'Toko Lain';
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Ganti Keranjang?'),
+            content: Text(
+              'Keranjang belanja Anda saat ini berisi produk dari [$existingStoreName].\n\n'
+              'Menambahkan produk dari [${store.name}] akan mengosongkan keranjang belanja Anda yang lain. Lanjutkan?',
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Batal', style: AppTextStyles.label.copyWith(color: AppColors.neutral)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  appState.addToCart(product, forceClear: true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Keranjang dikosongkan dan ditambahkan ${product.name}.'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                },
+                child: const Text('Lanjutkan'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 }
