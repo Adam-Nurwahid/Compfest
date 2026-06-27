@@ -54,7 +54,7 @@ class CartPage extends StatelessWidget {
                   onPressed: () {
                     appState.clearCart();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Keranjang berhasil dikosongkan.')),
+                      const SnackBar(duration: const Duration(seconds: 2), content: Text('Keranjang berhasil dikosongkan.')),
                     );
                   },
                   child: Text(
@@ -205,7 +205,7 @@ class CartPage extends StatelessWidget {
                                               ? () => appState.updateCartQuantity(item.product.id, 1)
                                               : () {
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
+                                                    const SnackBar(duration: const Duration(seconds: 2), 
                                                       content: Text('Batas maksimal stok tercapai!'),
                                                       backgroundColor: AppColors.secondary,
                                                     ),

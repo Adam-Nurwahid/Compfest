@@ -257,14 +257,14 @@ class DriverJobDetailPage extends StatelessWidget {
                 text: 'Ambil Job Pengiriman',
                 icon: Icons.check,
                 styleType: ButtonStyleType.primary,
-                onPressed: () {
+                onPressed: () async {
                   // Validate if driver has an active job
                   final hasActiveJob = appState.orders.any(
                     (o) => o.assignedDriverId == driverId && o.status == 'Sedang Dikirim'
                   );
                   if (hasActiveJob) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      const SnackBar(duration: const Duration(seconds: 2), 
                         content: Text('Anda masih memiliki 1 pengiriman aktif! Selesaikan terlebih dahulu sebelum mengambil job baru.'),
                         backgroundColor: AppColors.danger,
                       ),
@@ -273,10 +273,10 @@ class DriverJobDetailPage extends StatelessWidget {
                   }
 
                   // Take Job
-                  final success = appState.takeJob(activeOrder.id, driverId);
+                  final success = await appState.takeJob(activeOrder.id, driverId);
                   if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      SnackBar(duration: const Duration(seconds: 2), 
                         content: Text('Berhasil mengambil job ${activeOrder.id}!'),
                         backgroundColor: AppColors.primary,
                       ),
@@ -284,7 +284,7 @@ class DriverJobDetailPage extends StatelessWidget {
                     context.go('/driver/active-job');
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      const SnackBar(duration: const Duration(seconds: 2), 
                         content: Text('Gagal mengambil job. Job ini mungkin sudah diambil kurir lain (Simulasi Race Condition).'),
                         backgroundColor: AppColors.danger,
                       ),

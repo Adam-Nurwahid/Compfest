@@ -1,7 +1,8 @@
+// lib/core/routing/role_guard.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/dummy/app_state.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
 import 'access_denied_page.dart';
 
 class RoleGuard extends StatelessWidget {
@@ -20,23 +21,28 @@ class RoleGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    // Allow guest access if permitted and user is guest
+    // Izin masuk jika mode Tamu (Guest) diperbolehkan
     if (allowGuest && appState.activeRole == 'Guest') {
       return child;
     }
 
-    // Guard login: if not logged in, force LoginPage
+    // MEMPERBAIKI REDIRECT LOGIN (Fix Issue 1)
     if (!appState.isLoggedIn) {
-      return const LoginPage();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/login');
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Guard role: if activeRole does not match required, show AccessDeniedPage
+    // Memastikan peran aktif sesuai dengan hak akses halaman
     if (appState.activeRole != requiredRole) {
       return AccessDeniedPage(
         requiredRole: requiredRole,
         currentRole: appState.activeRole,
       );
     }
+
+
 
     return child;
   }

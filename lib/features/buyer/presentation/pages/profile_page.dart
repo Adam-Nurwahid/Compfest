@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../core/widgets/manage_roles_section.dart';
 import '../../../../data/dummy/app_state.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -50,7 +54,7 @@ class ProfilePage extends StatelessWidget {
             icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur Pengaturan dinonaktifkan di demo ini.')),
+                const SnackBar(duration: const Duration(seconds: 2), content: Text('Fitur Pengaturan dinonaktifkan di demo ini.')),
               );
             },
           ),
@@ -69,7 +73,20 @@ class ProfilePage extends StatelessWidget {
               _buildUserCard(context, appState),
               const SizedBox(height: 20),
 
-              // 2. Wallet Card
+              // 2. Manage Roles Section
+              Text(
+                'Peran & Akses',
+                style: AppTextStyles.label.copyWith(fontSize: 14, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              AppCard(
+                radius: 16,
+                padding: const EdgeInsets.all(16),
+                child: ManageRolesSection(),
+              ),
+              const SizedBox(height: 24),
+
+              // 3. Wallet Card
               _buildWalletCard(context, appState),
               const SizedBox(height: 28),
 
@@ -82,9 +99,10 @@ class ProfilePage extends StatelessWidget {
                 text: 'Keluar dari Akun',
                 styleType: ButtonStyleType.outlined,
                 onPressed: () {
+                  context.read<AuthBloc>().add(LogoutRequested());
                   appState.logout();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logout berhasil.')),
+                    const SnackBar(duration: const Duration(seconds: 2), content: Text('Logout berhasil.')),
                   );
                   context.go('/landing');
                 },
@@ -97,51 +115,43 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildUserCard(BuildContext context, AppState appState) {
+    final username = appState.currentUser?.username ?? 'Guest';
+    final ownedRoles = appState.availableRoles;
+
     return AppCard(
       radius: 20,
       padding: const EdgeInsets.all(20),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.tertiary,
-            child: const Icon(Icons.person, size: 36, color: AppColors.primary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Andi Kusuma',
-                  style: AppTextStyles.label.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Row(
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: AppColors.tertiary,
+                child: const Icon(Icons.person, size: 36, color: AppColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Role: ${appState.activeRole}',
-                        style: AppTextStyles.label.copyWith(fontSize: 11, color: AppColors.primary),
-                      ),
+                    Text(
+                      username,
+                      style: AppTextStyles.label.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Peran yang Dimiliki: ${ownedRoles.join(", ")}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.swap_horiz, color: AppColors.secondary),
-            tooltip: 'Ganti Role',
-            onPressed: () {
-              context.push('/role-selection');
-            },
-          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: AppColors.border),
         ],
       ),
     );

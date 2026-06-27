@@ -171,7 +171,6 @@ class _AdminVouchersPageState extends State<AdminVouchersPage> {
                                 final v = filteredVouchers[index];
                                 final isExpired = v.expiryDate.isBefore(DateTime.now());
                                 final isExhausted = v.quotaRemaining <= 0;
-                                final isActive = !isExpired && !isExhausted;
 
                                 String statusStr = 'Aktif';
                                 Color statusColor = Colors.green;
@@ -524,7 +523,7 @@ class _AdminVouchersPageState extends State<AdminVouchersPage> {
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Voucher ${newVoucher.code} berhasil digenerate!')),
+                        SnackBar(duration: const Duration(seconds: 2), content: Text('Voucher ${newVoucher.code} berhasil digenerate!')),
                       );
                     }
                   },

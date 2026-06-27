@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/reusable_widgets.dart';
 import '../../data/dummy/app_state.dart';
-import '../../data/models/models.dart';
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({super.key});

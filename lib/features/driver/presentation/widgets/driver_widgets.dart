@@ -86,7 +86,7 @@ class DriverAppBar extends StatelessWidget implements PreferredSizeWidget {
                     SnackBar(
                       content: Text(val ? 'Status: ONLINE. Siap menerima order!' : 'Status: OFFLINE.'),
                       backgroundColor: val ? AppColors.primary : AppColors.neutral,
-                      duration: const Duration(seconds: 1),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
@@ -138,7 +138,6 @@ class JobCard extends StatelessWidget {
         .toString()
         .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
 
-    // Method delivery styling
     Color badgeBg;
     Color badgeText;
     switch (order.deliveryMethod.toLowerCase()) {
@@ -163,7 +162,6 @@ class JobCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header of card
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
@@ -200,13 +198,12 @@ class JobCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Addresses
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -268,13 +265,12 @@ class JobCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12.0),
                   child: Divider(),
                 ),
-                
-                // Earnings Display
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -330,7 +326,7 @@ class ActiveJobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
     final earning = appState.calculateDriverEarning(order);
-    
+
     final formattedEarning = earning
         .toString()
         .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
@@ -370,8 +366,7 @@ class ActiveJobCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Map simulation placeholder
+
           Container(
             height: 120,
             width: double.infinity,
@@ -382,7 +377,6 @@ class ActiveJobCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Custom drawn roads representation
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _MapPainter(),
@@ -409,8 +403,7 @@ class ActiveJobCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Pickup & Dropoff Detail Info
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -468,10 +461,9 @@ class ActiveJobCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const Divider(height: 32),
-          
-          // Customer contact info
+
           Row(
             children: [
               CircleAvatar(
@@ -499,16 +491,18 @@ class ActiveJobCard extends StatelessWidget {
                 icon: const Icon(Icons.phone, color: Colors.teal),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Menghubungi nomor ${order.address.phoneNumber}...')),
+                    SnackBar(
+                      duration: const Duration(seconds: 2),
+                      content: Text('Menghubungi nomor ${order.address.phoneNumber}...'),
+                    ),
                   );
                 },
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
-          // Earnings estimation
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -526,10 +520,9 @@ class ActiveJobCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
-          // LARGE OPERATION ACTION BUTTON
+
           AppButton(
             text: 'Konfirmasi Selesai Kirim',
             icon: Icons.check_circle_outline,
@@ -554,8 +547,7 @@ class EarningSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
-    
-    // Calculate total earnings
+
     int totalEarning = 0;
     for (var order in completedJobs) {
       totalEarning += appState.calculateDriverEarning(order);
@@ -565,10 +557,17 @@ class EarningSummaryCard extends StatelessWidget {
         .toString()
         .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
 
-    // Build dummy weekly earnings (Sun to Sat) for the custom bar chart
-    final List<int> dailyEarnings = [35000, 48000, 20000, 55000, totalEarning > 100000 ? 95000 : 0, totalEarning > 0 ? totalEarning : 15000, 28000];
+    final List<int> dailyEarnings = [
+      35000,
+      48000,
+      20000,
+      55000,
+      totalEarning > 100000 ? 95000 : 0,
+      totalEarning > 0 ? totalEarning : 15000,
+      28000
+    ];
     final List<String> days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    
+
     final maxEarning = dailyEarnings.reduce((curr, next) => curr > next ? curr : next);
 
     return AppCard(
@@ -628,9 +627,9 @@ class EarningSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const Divider(color: Colors.white24, height: 32),
-          
+
           const Text(
             'Statistik Mingguan',
             style: TextStyle(
@@ -640,18 +639,16 @@ class EarningSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
-          // CUSTOM HIGH-FIDELITY BAR CHART
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List.generate(7, (idx) {
               final val = dailyEarnings[idx];
               final day = days[idx];
-              
-              // Calculate relative height (max 80px)
+
               final height = maxEarning > 0 ? (val / maxEarning) * 80.0 : 0.0;
-              final bool isToday = idx == 5; // Simulating Friday / today active
+              final bool isToday = idx == 5;
 
               return Column(
                 children: [
@@ -665,7 +662,8 @@ class EarningSummaryCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Container(
                     width: 14,
-                    height: height < 5 ? 5 : height,
+                    // Perbaikan: Gunakan presisi double (5.0) untuk menghindari num type promotion error
+                    height: height < 5.0 ? 5.0 : height,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isToday
@@ -677,12 +675,12 @@ class EarningSummaryCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: isToday
                           ? [
-                              BoxShadow(
-                                color: AppColors.secondary.withOpacity(0.4),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              )
-                            ]
+                        BoxShadow(
+                          color: AppColors.secondary.withOpacity(0.4),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        )
+                      ]
                           : null,
                     ),
                   ),
@@ -714,12 +712,10 @@ class _MapPainter extends CustomPainter {
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
 
-    // Roads lines
     canvas.drawLine(Offset(0, size.height * 0.2), Offset(size.width, size.height * 0.8), paint);
     canvas.drawLine(Offset(size.width * 0.3, 0), Offset(size.width * 0.5, size.height), paint);
     canvas.drawLine(Offset(0, size.height * 0.7), Offset(size.width, size.height * 0.3), paint);
-    
-    // Draw dots representing points
+
     final dotPaint = Paint()
       ..style = PaintingStyle.fill;
 

@@ -291,10 +291,10 @@ class SellerOrderDetailPage extends StatelessWidget {
                   text: 'Proses Pesanan Sekarang',
                   icon: Icons.inventory_2_outlined,
                   styleType: ButtonStyleType.secondary,
-                  onPressed: () {
-                    appState.processOrder(orderId);
+                  onPressed: () async {
+                    await appState.processOrder(orderId);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      SnackBar(duration: const Duration(seconds: 2), 
                         content: Text('Pesanan $orderId berhasil diproses!'),
                         backgroundColor: AppColors.primary,
                       ),

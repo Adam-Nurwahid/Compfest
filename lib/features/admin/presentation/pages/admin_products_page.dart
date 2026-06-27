@@ -22,7 +22,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     final filteredProducts = dummyProducts.where((product) {
       final store = dummyStores.firstWhere(
         (s) => s.id == product.storeId,
-        orElse: () => Store(id: '', ownerId: '', name: 'Toko Tidak Dikenal', location: '', logoUrl: '', rating: 0, description: ''),
+        orElse: () => Store(id: '', sellerId: '', name: 'Toko Tidak Dikenal', location: '', logoUrl: '', rating: 0, description: ''),
       );
 
       final matchesSearch = product.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -182,7 +182,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 // Find store
                                 final store = dummyStores.firstWhere(
                                   (s) => s.id == product.storeId,
-                                  orElse: () => Store(id: '', ownerId: '', name: 'Toko Tidak Dikenal', location: '', logoUrl: '', rating: 0, description: ''),
+                                  orElse: () => Store(id: '', sellerId: '', name: 'Toko Tidak Dikenal', location: '', logoUrl: '', rating: 0, description: ''),
                                 );
 
                                 return Padding(

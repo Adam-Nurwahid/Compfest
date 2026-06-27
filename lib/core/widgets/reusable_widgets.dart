@@ -1,4 +1,7 @@
+import 'package:compfest/data/dummy/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 
 /// 1. AppButton
@@ -360,9 +363,31 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: false,
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.textPrimary),
-              onPressed: onBackPress ?? () => Navigator.maybePop(context),
-            )
+        icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.textPrimary),
+        onPressed: onBackPress ?? () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else if (GoRouter.of(context).canPop()) {
+            GoRouter.of(context).pop();
+          } else {
+            try {
+              final appState = Provider.of<AppState>(context, listen: false);
+              final role = appState.activeRole.toLowerCase();
+              if (role == 'seller') {
+                context.go('/seller/dashboard');
+              } else if (role == 'driver') {
+                context.go('/driver/find-jobs');
+              } else if (role == 'admin') {
+                context.go('/admin/dashboard');
+              } else {
+                context.go('/landing');
+              }
+            } catch (_) {
+              context.go('/landing');
+            }
+          }
+        },
+      )
           : null,
       title: Text(
         title,

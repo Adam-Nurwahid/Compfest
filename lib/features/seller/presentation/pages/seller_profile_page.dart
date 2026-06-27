@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../core/widgets/manage_roles_section.dart';
 import '../../../../data/dummy/app_state.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 import 'seller_widgets.dart';
 
 class SellerProfilePage extends StatelessWidget {
@@ -13,7 +17,7 @@ class SellerProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final user = appState.currentUser;
-    final store = appState.currentUserStore;
+    final store = appState.getStoreBySellerId(user?.id ?? '');
 
     // Guard: not logged in
     if (user == null) {
@@ -72,7 +76,7 @@ class SellerProfilePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 2. Active Role & Available Roles Badge section
+              // 2. Manage Roles Section
               Text(
                 'Peran & Akses',
                 style: AppTextStyles.label.copyWith(fontSize: 14, color: AppColors.textPrimary),
@@ -81,59 +85,7 @@ class SellerProfilePage extends StatelessWidget {
               AppCard(
                 radius: 16,
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Role Aktif Sesi Ini:',
-                          style: AppTextStyles.bodyMedium.copyWith(fontSize: 13),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Seller Mode',
-                            style: AppTextStyles.label.copyWith(fontSize: 11, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Daftar Role yang Dimiliki:',
-                      style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: user.roles.map((role) {
-                        final isActive = role == appState.activeRole;
-                        return Chip(
-                          label: Text(role),
-                          backgroundColor: isActive ? AppColors.primary.withOpacity(0.1) : AppColors.border.withOpacity(0.5),
-                          labelStyle: AppTextStyles.label.copyWith(
-                            fontSize: 11,
-                            color: isActive ? AppColors.primary : AppColors.neutral,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(
-                              color: isActive ? AppColors.primary : Colors.transparent,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
+                child: ManageRolesSection(),
               ),
               const SizedBox(height: 24),
 
@@ -226,30 +178,19 @@ class SellerProfilePage extends StatelessWidget {
                     ),
               const SizedBox(height: 32),
 
-              // 4. Role Switch Action (for multi-role user)
-              if (user.roles.length > 1) ...[
-                AppButton(
-                  text: 'Beralih Ke Mode Pembeli (Buyer)',
-                  icon: Icons.swap_horiz,
-                  onPressed: () {
-                    appState.setActiveRole('Buyer');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Switched to Buyer Mode')),
-                    );
-                    context.go('/landing');
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // 5. Logout Action
+              // 3. Logout Action
               AppButton(
                 text: 'Keluar dari Akun',
                 styleType: ButtonStyleType.outlined,
                 onPressed: () {
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  context.read<AuthBloc>().add(LogoutRequested());
                   appState.logout();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logout berhasil.')),
+                    const SnackBar(
+                      duration: Duration(seconds: 1, milliseconds: 500),
+                      content: Text('Logout berhasil.'),
+                    ),
                   );
                   context.go('/landing');
                 },

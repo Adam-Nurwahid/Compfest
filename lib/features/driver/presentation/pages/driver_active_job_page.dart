@@ -37,11 +37,11 @@ class DriverActiveJobPage extends StatelessWidget {
                   children: [
                     ActiveJobCard(
                       order: activeJobs.first,
-                      onComplete: () {
+                      onComplete: () async {
                         final order = activeJobs.first;
-                        appState.completeJob(order.id);
+                        await appState.completeJob(order.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          SnackBar(duration: const Duration(seconds: 2), 
                             content: Text('Pesanan ${order.id} berhasil diselesaikan!'),
                             backgroundColor: Colors.teal,
                           ),

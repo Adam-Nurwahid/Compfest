@@ -46,3 +46,19 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+# Abaikan semua file text hasil catatan atau SQL code
+*.txt
+*.sql
+seed.sql
+
+# Abaikan buku panduan atau tugas berformat PDF
+*.pdf
+
+# File bawaan Flutter/Dart yang juga wajib diabaikan
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/

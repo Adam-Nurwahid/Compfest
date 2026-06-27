@@ -1,247 +1,204 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../repositories/transaction_repository.dart';
+import '../../features/app_review/data/repositories/app_review_repository.dart';
 import 'dummy_data.dart';
 
 class AppState extends ChangeNotifier {
-  // --- AUTH STATE ---
+  static AppState? _instance;
+  static AppState get instance {
+    _instance ??= AppState._init();
+    return _instance!;
+  }
+
+  final TransactionRepository _txRepository = TransactionRepository();
+  final AppReviewRepository _reviewRepository = AppReviewRepository();
+
+  // --- STATE VARIABEL ---
   User? _currentUser;
   bool _isLoggedIn = false;
-  String _activeRole = 'Guest'; // 'Guest', 'Buyer', 'Seller', 'Driver'
+  String _activeRole = 'Guest';
+  int _walletBalance = 0;
+  List<Address> _addresses = [];
+  List<Order> _orders = [];
+  final List<CartItem> _cartItems = [];
+  String? _cartStoreId;
+  Store? _currentUserStore;
 
+  bool _isDriverOnline = true;
+  DateTime _simulatedDateTime = DateTime.now();
+  List<WalletTransaction> _walletTransactions = [];
+  List<Voucher> _vouchers = [];
+  List<Promo> _promos = [];
+  List<AppReview> _appReviews = [];
+  List<Product> _currentStoreProducts = [];
+
+  AppState._init() {
+    _vouchers.addAll(dummyVouchers);
+    _promos.addAll(dummyPromos);
+    _appReviews.addAll(dummyAppReviews);
+  }
+
+  static String _formatRole(String role) {
+    return role[0].toUpperCase() + role.substring(1).toLowerCase();
+  }
+
+  // --- GETTERS ---
   User? get currentUser => _currentUser;
   bool get isLoggedIn => _isLoggedIn;
   String get activeRole => _activeRole;
-  List<String> get availableRoles => _currentUser?.roles ?? [];
-
-  bool login(String username, String password) {
-    // TODO: replace with real API call
-    final normalized = username.toLowerCase().trim();
-    try {
-      final user = dummyUsers.firstWhere(
-        (u) => u.email.toLowerCase() == normalized || u.username.toLowerCase() == normalized,
-      );
-      if (user.password == password) {
-        _currentUser = user;
-        _isLoggedIn = true;
-        _activeRole = user.roles.first;
-        notifyListeners();
-        return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  void logout() {
-    // TODO: replace with real API call
-    _isLoggedIn = false;
-    _currentUser = null;
-    _activeRole = 'Guest';
-    _cartItems.clear(); // Clear cart on logout
-    notifyListeners();
-  }
-
-  void setActiveRole(String role) {
-    if (_isLoggedIn && _currentUser != null && _currentUser!.roles.contains(role)) {
-      _activeRole = role;
-      notifyListeners();
-    }
-  }
-
-  // --- STORE HELPER (Seller) ---
-  Store? get currentUserStore {
-    if (_currentUser == null) return null;
-    try {
-      return dummyStores.firstWhere((store) => store.ownerId == _currentUser!.id);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // --- STORE MANAGEMENT (Seller) ---
-  void createStore(Store store) {
-    // TODO: replace with real API call
-    dummyStores.add(store);
-    notifyListeners();
-  }
-
-  void updateStore(Store updatedStore) {
-    // TODO: replace with real API call
-    final index = dummyStores.indexWhere((s) => s.id == updatedStore.id);
-    if (index != -1) {
-      dummyStores[index] = updatedStore;
-      notifyListeners();
-    }
-  }
-
-  // --- PRODUCT MANAGEMENT CRUD (Seller) ---
-  void addProduct(Product product) {
-    // TODO: replace with real API call
-    dummyProducts.add(product);
-    notifyListeners();
-  }
-
-  void updateProduct(Product updatedProduct) {
-    // TODO: replace with real API call
-    final index = dummyProducts.indexWhere((p) => p.id == updatedProduct.id);
-    if (index != -1) {
-      dummyProducts[index] = updatedProduct;
-      notifyListeners();
-    }
-  }
-
-  void deleteProduct(String productId) {
-    // TODO: replace with real API call
-    dummyProducts.removeWhere((p) => p.id == productId);
-    notifyListeners();
-  }
-
-  // --- ORDER PROCESSING (Seller) ---
-  void processOrder(String orderId) {
-    // TODO: replace with real API call
-    final index = _orders.indexWhere((o) => o.id == orderId);
-    if (index != -1) {
-      final order = _orders[index];
-      if (order.status == 'Sedang Dikemas') {
-        order.status = 'Menunggu Pengirim';
-        order.statusTimeline.add(OrderMilestone(
-          status: 'Menunggu Pengirim',
-          timestamp: DateTime.now(),
-          description: 'Pesanan siap diambil kurir. Penjual telah memproses pesanan.',
-        ));
-        notifyListeners();
-      }
-    }
-  }
-
-  // --- WALLET STATE ---
-  int _walletBalance = 10000000; // Start with Rp 10.000.000
-  final List<WalletTransaction> _walletTransactions = [
-    WalletTransaction(
-      id: 'tx_init',
-      type: 'topup',
-      amount: 10000000,
-      timestamp: DateTime.now().subtract(const Duration(days: 5)),
-      title: 'Saldo Awal Sistem',
-    ),
-  ];
-
   int get walletBalance => _walletBalance;
-  List<WalletTransaction> get walletTransactions => _walletTransactions;
-
-  void topUp(int amount) {
-    if (amount <= 0) return;
-    _walletBalance += amount;
-    _walletTransactions.insert(
-      0,
-      WalletTransaction(
-        id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-        type: 'topup',
-        amount: amount,
-        timestamp: DateTime.now(),
-        title: 'Top Up Saldo',
-      ),
-    );
-    notifyListeners();
-  }
-
-  bool deductWallet(int amount, String orderId) {
-    if (_walletBalance < amount) return false;
-    _walletBalance -= amount;
-    _walletTransactions.insert(
-      0,
-      WalletTransaction(
-        id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-        type: 'payment',
-        amount: amount,
-        timestamp: DateTime.now(),
-        title: 'Pembayaran Order $orderId',
-      ),
-    );
-    notifyListeners();
-    return true;
-  }
-
-  // --- ADDRESS STATE ---
-  final List<Address> _addresses = List.from(dummyAddresses);
-
   List<Address> get addresses => _addresses;
-  Address get defaultAddress => _addresses.firstWhere(
-        (addr) => addr.isDefault,
-        orElse: () => _addresses.isNotEmpty
-            ? _addresses.first
-            : Address(
-                id: 'default',
-                receiverName: 'Nama Pembeli',
-                phoneNumber: '08123456789',
-                fullAddress: 'Belum ada alamat disimpan',
-                isDefault: true,
-              ),
-      );
-
-  void addAddress(Address address) {
-    if (address.isDefault) {
-      // Set all other addresses isDefault = false
-      for (int i = 0; i < _addresses.length; i++) {
-        _addresses[i] = _addresses[i].copyWith(isDefault: false);
-      }
-    }
-    _addresses.add(address);
-    notifyListeners();
-  }
-
-  void editAddress(Address updatedAddress) {
-    final index = _addresses.indexWhere((addr) => addr.id == updatedAddress.id);
-    if (index != -1) {
-      if (updatedAddress.isDefault) {
-        for (int i = 0; i < _addresses.length; i++) {
-          _addresses[i] = _addresses[i].copyWith(isDefault: false);
-        }
-      }
-      _addresses[index] = updatedAddress;
-      notifyListeners();
-    }
-  }
-
-  void deleteAddress(String addressId) {
-    final index = _addresses.indexWhere((addr) => addr.id == addressId);
-    if (index != -1) {
-      final wasDefault = _addresses[index].isDefault;
-      _addresses.removeAt(index);
-      if (wasDefault && _addresses.isNotEmpty) {
-        _addresses[0] = _addresses[0].copyWith(isDefault: true);
-      }
-      notifyListeners();
-    }
-  }
-
-  void setDefaultAddress(String addressId) {
-    for (int i = 0; i < _addresses.length; i++) {
-      if (_addresses[i].id == addressId) {
-        _addresses[i] = _addresses[i].copyWith(isDefault: true);
-      } else {
-        _addresses[i] = _addresses[i].copyWith(isDefault: false);
-      }
-    }
-    notifyListeners();
-  }
-
-  // --- CART STATE ---
-  final List<CartItem> _cartItems = [];
-  String? _cartStoreId;
-
+  List<Order> get orders => _orders;
   List<CartItem> get cartItems => _cartItems;
   String? get cartStoreId => _cartStoreId;
+  List<String> get availableRoles => _currentUser?.roles ?? [];
+  bool get isDriverOnline => _isDriverOnline;
+  DateTime get simulatedDateTime => _simulatedDateTime;
+  List<WalletTransaction> get walletTransactions => _walletTransactions;
+  List<Voucher> get vouchers => _vouchers;
+  List<Promo> get promos => _promos;
+  List<AppReview> get appReviews => _appReviews;
+  Store? get currentUserStore => _currentUserStore;
+  List<Product> get currentStoreProducts => _currentStoreProducts;
 
   Store? get cartStore {
     if (_cartStoreId == null) return null;
-    return dummyStores.firstWhere((s) => s.id == _cartStoreId);
+    try {
+      return dummyStores.firstWhere((s) => s.id == _cartStoreId);
+    } catch (_) {
+      return null;
+    }
   }
 
   int get cartSubtotal {
     return _cartItems.fold(0, (sum, item) => sum + (item.product.price * item.quantity));
   }
 
-  // Add item, returns true if success, false if store conflict
+  Address get defaultAddress => _addresses.firstWhere(
+        (addr) => addr.isDefault,
+    orElse: () => _addresses.isNotEmpty
+        ? _addresses.first
+        : Address(
+      id: 'default',
+      receiverName: 'Nama Pembeli',
+      phoneNumber: '08123456789',
+      fullAddress: 'Belum ada alamat disimpan',
+      isDefault: true,
+    ),
+  );
+
+  Store? getStoreBySellerId(String sellerId) {
+    try {
+      return dummyStores.firstWhere((store) => store.sellerId == sellerId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // --- SYNC METHODS ---
+  void syncProducts(List<Product> products, String storeId) {
+    dummyProducts.removeWhere((p) => p.storeId == storeId);
+    dummyProducts.addAll(products);
+    notifyListeners();
+  }
+
+  void syncAllProductsAndStores(List<Product> products, List<Store> stores) {
+    dummyProducts.clear();
+    dummyProducts.addAll(products);
+    dummyStores.clear();
+    dummyStores.addAll(stores);
+    notifyListeners();
+  }
+
+  // --- SINKRONISASI DATA PRODUKSI ---
+  Future<void> loadUserData(String userId, String role) async {
+    try {
+      _walletBalance = await _txRepository.getWalletBalance(userId);
+      _addresses = await _txRepository.getAddresses(userId);
+      _orders = await _txRepository.fetchOrdersByRole(userId, role);
+
+      // Ambil data toko jika user memiliki akses seller
+      if (_currentUser?.roles.map((r) => r.toLowerCase()).contains('seller') ?? false) {
+        _currentUserStore = await _txRepository.getStoreBySellerId(userId);
+        if (_currentUserStore != null) {
+          _currentStoreProducts = await _txRepository.getProductsByStoreId(_currentUserStore!.id);
+        }
+      }
+
+      // Load app reviews from Supabase for authenticated users
+      final dbReviews = await _reviewRepository.fetchAllReviews();
+      if (dbReviews.isNotEmpty) {
+        _appReviews = dbReviews;
+      }
+      // If Supabase returned nothing (new DB / no reviews yet), keep dummyAppReviews as fallback
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading production data: $e');
+    }
+  }
+
+  void setLoggedInUser(String id, String username, String email, List<String> roles, String activeRole) {
+    List<String> capitalizedRoles = roles.map((r) => _formatRole(r)).toList();
+    String capitalizedActiveRole = _formatRole(activeRole);
+
+    _currentUser = User(
+      id: id,
+      name: username,
+      email: email,
+      username: username,
+      password: '',
+      roles: capitalizedRoles,
+      activeRole: capitalizedActiveRole,
+    );
+    _isLoggedIn = true;
+    _activeRole = capitalizedActiveRole;
+
+    loadUserData(id, activeRole);
+  }
+
+  void addRoleLocallyAndSwitch(String newRole) {
+    if (_currentUser == null) return;
+    final formattedRole = _formatRole(newRole);
+
+    List<String> updatedRoles = List.from(_currentUser!.roles);
+    if (!updatedRoles.contains(formattedRole)) {
+      updatedRoles.add(formattedRole);
+    }
+
+    _currentUser = _currentUser!.copyWith(
+      roles: updatedRoles,
+      activeRole: formattedRole,
+    );
+    _activeRole = formattedRole;
+
+    loadUserData(_currentUser!.id, newRole.toLowerCase());
+  }
+
+  void logout() {
+    _isLoggedIn = false;
+    _currentUser = null;
+    _activeRole = 'Guest';
+    _walletBalance = 0;
+    _currentUserStore = null;
+    _addresses.clear();
+    _orders.clear();
+    _cartItems.clear();
+    _cartStoreId = null;
+    _walletTransactions.clear();
+    _currentStoreProducts.clear();
+    notifyListeners();
+  }
+
+  void setActiveRole(String role) {
+    if (_isLoggedIn && _currentUser != null) {
+      _activeRole = _formatRole(role);
+      loadUserData(_currentUser!.id, role.toLowerCase());
+    }
+  }
+
+  // --- MANAJEMEN KERANJANG REALTIME ---
   bool addToCart(Product product, {bool forceClear = false}) {
     if (forceClear) {
       _cartItems.clear();
@@ -251,8 +208,7 @@ class AppState extends ChangeNotifier {
     if (_cartItems.isEmpty) {
       _cartStoreId = product.storeId;
     } else if (_cartStoreId != product.storeId) {
-      // Store conflict!
-      return false;
+      return false; // Blokir aturan single-store checkout [cite: 450, 557]
     }
 
     final index = _cartItems.indexWhere((item) => item.product.id == product.id);
@@ -272,20 +228,117 @@ class AppState extends ChangeNotifier {
       if (_cartItems[index].quantity <= 0) {
         _cartItems.removeAt(index);
       }
-      if (_cartItems.isEmpty) {
-        _cartStoreId = null;
-      }
+      if (_cartItems.isEmpty) _cartStoreId = null;
       notifyListeners();
     }
   }
 
   void removeFromCart(String productId) {
     _cartItems.removeWhere((item) => item.product.id == productId);
-    if (_cartItems.isEmpty) {
-      _cartStoreId = null;
-    }
+    if (_cartItems.isEmpty) _cartStoreId = null;
     notifyListeners();
   }
+
+  // --- ACTIONS PRODUKSI VIA REPOSITORY ---
+  Future<({String? error, String? orderId})> checkoutActiveCart({
+    required int ppnAmount,
+    required int discountAmount,
+    required Address address,
+    required String deliveryMethod,
+    required int deliveryFee,
+    required int finalTotal,
+    String? voucherCode,
+  }) async {
+    if (_currentUser == null) return (error: 'Pengguna belum login.', orderId: null);
+    if (_cartItems.isEmpty) return (error: 'Keranjang belanja kosong.', orderId: null);
+    if (_cartStoreId == null || _cartStoreId!.isEmpty) return (error: 'Data toko tidak ditemukan.', orderId: null);
+    if (_walletBalance < finalTotal) return (error: 'Saldo SEA-Wallet tidak mencukupi.', orderId: null);
+
+    // Validasi ketersediaan stok
+    for (final item in _cartItems) {
+      if (item.product.stock < item.quantity) {
+        return (error: 'Stok "${item.product.name}" tidak mencukupi (tersedia ${item.product.stock}, diminta ${item.quantity}).', orderId: null);
+      }
+    }
+
+    // Validasi kelengkapan alamat pengiriman
+    final addrText = address.fullAddress.trim();
+    if (addrText.isEmpty || addrText == 'Belum ada alamat disimpan') {
+      return (error: 'Silakan pilih atau tambahkan alamat pengiriman terlebih dahulu.', orderId: null);
+    }
+
+    try {
+      final orderData = {
+        'buyer_id': _currentUser!.id,
+        'store_id': _cartStoreId,
+        'delivery_method': deliveryMethod,
+        'delivery_fee': deliveryFee,
+        'ppn_amount': ppnAmount,
+        'discount_amount': discountAmount,
+        'subtotal': _cartItems.fold(0, (sum, item) => sum + (item.product.price * item.quantity)),
+        'final_total': finalTotal,
+        'status': 'Sedang Dikemas',
+        'shipping_address': address.fullAddress,
+      };
+
+      // Deduct stock once and sync to DB in a single pass (fixes double-deduction bug)
+      for (final item in _cartItems) {
+        item.product.stock -= item.quantity;
+        await _txRepository.updateProductStock(item.product.id, item.product.stock);
+      }
+      // Pengurangan kuota voucher lokal jika dipakai
+      if (voucherCode != null) {
+        final vIdx = _vouchers.indexWhere((v) => v.code == voucherCode);
+        if (vIdx != -1 && _vouchers[vIdx].quotaRemaining > 0) {
+          _vouchers[vIdx].quotaRemaining--;
+        }
+      }
+
+      // 1. Simpan induk pesanan ke Supabase
+      final inserted = await _txRepository.insertOrder(orderData);
+
+      final orderId = inserted != null ? inserted['id'] as String : 'dummy-${DateTime.now().millisecondsSinceEpoch}';
+      if (inserted != null) {
+        final List<Map<String, dynamic>> itemsPayload = _cartItems.map((item) => {
+          'order_id': orderId,
+          'product_id': item.product.id,
+          'quantity': item.quantity,
+          'price_at_purchase': item.product.price,
+        }).toList();
+
+        await _txRepository.insertOrderItems(itemsPayload);
+      }
+
+      final newBalance = _walletBalance - finalTotal;
+      await _txRepository.updateWalletBalance(_currentUser!.id, newBalance, {
+        'user_id': _currentUser!.id,
+        'type': 'payment',
+        'amount': finalTotal,
+        'title': 'Pembayaran Transaksi $orderId',
+      });
+
+      _walletBalance = newBalance;
+      _cartItems.clear();
+      _cartStoreId = null;
+
+      await loadUserData(_currentUser!.id, _activeRole);
+      return (error: null, orderId: orderId);
+    } catch (e) {
+      debugPrint('Checkout failed: $e');
+      return (error: 'Gagal memproses pesanan: ${e.toString().replaceAll('Exception:', '').trim()}', orderId: null);
+    }
+  }
+
+  Future<void> refreshStoreData() async {
+    if (_currentUser != null && (_currentUser?.roles.map((r) => r.toLowerCase()).contains('seller') ?? false)) {
+      _currentUserStore = await _txRepository.getStoreBySellerId(_currentUser!.id);
+      if (_currentUserStore != null) {
+        _currentStoreProducts = await _txRepository.getProductsByStoreId(_currentUserStore!.id);
+      }
+      notifyListeners();
+    }
+  }
+
 
   void clearCart() {
     _cartItems.clear();
@@ -293,183 +346,132 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- VOUCHER & PROMO VALIDATION ---
-  final List<Voucher> _vouchers = List.from(dummyVouchers);
-  final List<Promo> _promos = List.from(dummyPromos);
+  void triggerRefresh() {
+    notifyListeners();
+  }
 
-  List<Voucher> get vouchers => _vouchers;
-  List<Promo> get promos => _promos;
+  // --- WALLET & TOPUP ---
+  void topUp(int amount) {
+    if (amount <= 0) return;
+    _walletBalance += amount;
+    _walletTransactions.insert(
+      0,
+      WalletTransaction(
+        id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'topup',
+        amount: amount,
+        timestamp: DateTime.now(),
+        title: 'Top Up Saldo',
+      ),
+    );
+    notifyListeners();
 
-  void addVoucher(Voucher voucher) {
-    // Check if code already exists, if so overwrite or ignore
-    final index = _vouchers.indexWhere((v) => v.code == voucher.code.toUpperCase().trim());
-    if (index == -1) {
-      _vouchers.add(voucher);
-    } else {
-      _vouchers[index] = voucher;
+    // Persist to Supabase (fire-and-forget; non-fatal if fails for dummy users)
+    if (_currentUser != null) {
+      _txRepository.topUpWallet(_currentUser!.id, amount);
     }
+  }
+
+  // --- ADDRESS WORKFLOW ---
+  void addAddress(Address address) {
+    if (address.isDefault) {
+      for (int i = 0; i < _addresses.length; i++) {
+        _addresses[i] = _addresses[i].copyWith(isDefault: false);
+      }
+    }
+    _addresses.add(address);
+    notifyListeners();
+  }
+
+  void editAddress(Address updatedAddress) {
+    final index = _addresses.indexWhere((addr) => addr.id == updatedAddress.id);
+    if (index != -1) {
+      if (updatedAddress.isDefault) {
+        for (int i = 0; i < _addresses.length; i++) {
+          _addresses[i] = _addresses[i].copyWith(isDefault: false);
+        }
+      }
+      _addresses[index] = updatedAddress;
+      notifyListeners();
+      // Persist change to Supabase (fire-and-forget; skips non-UUID IDs)
+      _txRepository.updateAddress(updatedAddress);
+    }
+  }
+
+  void deleteAddress(String addressId) {
+    final index = _addresses.indexWhere((addr) => addr.id == addressId);
+    if (index != -1) {
+      final wasDefault = _addresses[index].isDefault;
+      _addresses.removeAt(index);
+      if (wasDefault && _addresses.isNotEmpty) {
+        _addresses[0] = _addresses[0].copyWith(isDefault: true);
+      }
+      notifyListeners();
+      // Persist deletion to Supabase (fire-and-forget; skips non-UUID IDs)
+      _txRepository.deleteAddress(addressId);
+    }
+  }
+
+  void setDefaultAddress(String addressId) {
+    for (int i = 0; i < _addresses.length; i++) {
+      if (_addresses[i].id == addressId) {
+        _addresses[i] = _addresses[i].copyWith(isDefault: true);
+      } else {
+        _addresses[i] = _addresses[i].copyWith(isDefault: false);
+      }
+    }
+    notifyListeners();
+  }
+
+  // --- VOUCHER & PROMO VALIDATION ---
+  void addVoucher(Voucher voucher) {
+    _vouchers.add(voucher);
     notifyListeners();
   }
 
   void addPromo(Promo promo) {
-    final index = _promos.indexWhere((p) => p.code == promo.code.toUpperCase().trim());
-    if (index == -1) {
-      _promos.add(promo);
-    } else {
-      _promos[index] = promo;
-    }
+    _promos.add(promo);
     notifyListeners();
   }
 
-  // Validate Voucher. Returns Map with status, message, and discount calculation
   Map<String, dynamic> validateVoucher(String code, int subtotal) {
     final normalizedCode = code.toUpperCase().trim();
     final index = _vouchers.indexWhere((v) => v.code == normalizedCode);
-    if (index == -1) {
-      return {'valid': false, 'message': 'Kode Voucher tidak ditemukan', 'discount': 0};
-    }
+    if (index == -1) return {'valid': false, 'message': 'Kode Voucher tidak ditemukan.', 'discount': 0};
     final v = _vouchers[index];
+
+    // Guard 1: Check expiry date
     if (v.expiryDate.isBefore(DateTime.now())) {
-      return {'valid': false, 'message': 'Voucher sudah kedaluwarsa', 'discount': 0};
+      return {'valid': false, 'message': 'Voucher "${v.code}" sudah kedaluwarsa.', 'discount': 0};
     }
+    // Guard 2: Check remaining quota
     if (v.quotaRemaining <= 0) {
-      return {'valid': false, 'message': 'Kuota Voucher telah habis', 'discount': 0};
+      return {'valid': false, 'message': 'Kuota Voucher "${v.code}" telah habis.', 'discount': 0};
     }
 
-    int discount = 0;
-    if (v.isPercentage) {
-      discount = (subtotal * v.discountAmount / 100).round();
-    } else {
-      discount = v.discountAmount;
-    }
-    // Limit discount to subtotal
+    int discount = v.isPercentage ? (subtotal * v.discountAmount / 100).round() : v.discountAmount;
     if (discount > subtotal) discount = subtotal;
-
-    return {
-      'valid': true,
-      'message': 'Voucher berhasil digunakan! Diskon Rp${discount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
-      'discount': discount,
-      'code': v.code,
-      'type': 'Voucher'
-    };
+    return {'valid': true, 'message': 'Voucher berhasil digunakan!', 'discount': discount, 'code': v.code, 'type': 'Voucher'};
   }
 
-  // Validate Promo. Returns Map
   Map<String, dynamic> validatePromo(String code, int subtotal) {
     final normalizedCode = code.toUpperCase().trim();
     final index = _promos.indexWhere((p) => p.code == normalizedCode);
-    if (index == -1) {
-      return {'valid': false, 'message': 'Kode Promo tidak ditemukan', 'discount': 0};
-    }
+    if (index == -1) return {'valid': false, 'message': 'Kode Promo tidak ditemukan.', 'discount': 0};
     final p = _promos[index];
+
+    // Guard: Check expiry date
     if (p.expiryDate.isBefore(DateTime.now())) {
-      return {'valid': false, 'message': 'Promo sudah kedaluwarsa', 'discount': 0};
+      return {'valid': false, 'message': 'Promo "${p.code}" sudah kedaluwarsa.', 'discount': 0};
     }
 
-    int discount = 0;
-    if (p.isPercentage) {
-      discount = (subtotal * p.discountAmount / 100).round();
-    } else {
-      discount = p.discountAmount;
-    }
+    int discount = p.isPercentage ? (subtotal * p.discountAmount / 100).round() : p.discountAmount;
     if (discount > subtotal) discount = subtotal;
-
-    return {
-      'valid': true,
-      'message': 'Promo berhasil diterapkan! Potongan Rp${discount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
-      'discount': discount,
-      'code': p.code,
-      'type': 'Promo'
-    };
+    return {'valid': true, 'message': 'Promo berhasil diterapkan!', 'discount': discount, 'code': p.code, 'type': 'Promo'};
   }
 
-  // Deduct Voucher Quota on checkout
-  void useVoucherQuota(String code) {
-    final index = _vouchers.indexWhere((v) => v.code == code);
-    if (index != -1 && _vouchers[index].quotaRemaining > 0) {
-      _vouchers[index].quotaRemaining -= 1;
-      notifyListeners();
-    }
-  }
-
-  // --- ORDERS STATE ---
-  // --- DRIVER STATE ---
-  bool _isDriverOnline = true;
-  bool get isDriverOnline => _isDriverOnline;
-
-  void toggleDriverOnline() {
-    _isDriverOnline = !_isDriverOnline;
-    notifyListeners();
-  }
-
-  double getDriverEarningPercentage(String method) {
-    // Instant: 80%, Next Day: 70%, Regular/others: 60%
-    switch (method.toLowerCase()) {
-      case 'instant':
-        return 0.8;
-      case 'next day':
-        return 0.7;
-      case 'regular':
-      default:
-        return 0.6;
-    }
-  }
-
-  int calculateDriverEarning(Order order) {
-    final pct = getDriverEarningPercentage(order.deliveryMethod);
-    return (order.deliveryFee * pct).round();
-  }
-
-  // Take a job (Find Available Jobs -> Active Job)
-  bool takeJob(String orderId, String driverId) {
-    // Business Rule: A driver can only have 1 active job at a time
-    final hasActiveJob = _orders.any((o) => o.assignedDriverId == driverId && o.status == 'Sedang Dikirim');
-    if (hasActiveJob) {
-      return false;
-    }
-
-    final index = _orders.indexWhere((o) => o.id == orderId);
-    if (index != -1) {
-      final order = _orders[index];
-      // Defensive check: order must be 'Menunggu Pengirim' and have no driver assigned
-      if (order.status == 'Menunggu Pengirim' && order.assignedDriverId == null) {
-        order.assignedDriverId = driverId;
-        order.status = 'Sedang Dikirim';
-        order.statusTimeline.add(OrderMilestone(
-          status: 'Sedang Dikirim',
-          timestamp: DateTime.now(),
-          description: 'Pesanan telah diambil oleh kurir dan sedang dalam perjalanan ke alamat Anda.',
-        ));
-        notifyListeners();
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // Complete a job (Active Job -> History)
-  void completeJob(String orderId) {
-    final index = _orders.indexWhere((o) => o.id == orderId);
-    if (index != -1) {
-      final order = _orders[index];
-      if (order.status == 'Sedang Dikirim') {
-        order.status = 'Pesanan Selesai';
-        order.statusTimeline.add(OrderMilestone(
-          status: 'Pesanan Selesai',
-          timestamp: DateTime.now(),
-          description: 'Pesanan selesai diserahkan ke penerima oleh kurir.',
-        ));
-        notifyListeners();
-      }
-    }
-  }
-
-  // --- ORDERS STATE ---
-  final List<Order> _orders = List.from(dummyOrders);
-
-  List<Order> get orders => _orders;
-
-  void placeOrder({
+  // --- BUSINESS WORKFLOW (PROD & FALLBACK) ---
+  Future<({String? error, String? orderId})> placeOrder({
     required Address address,
     required String deliveryMethod,
     required int deliveryFee,
@@ -477,137 +479,251 @@ class AppState extends ChangeNotifier {
     required int discountAmount,
     required int ppnAmount,
     required int finalTotal,
-  }) {
-    if (_cartItems.isEmpty || _cartStoreId == null) return;
-    final store = cartStore!;
-
-    final orderId = 'ORD-${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
-
-    // Deduct stock for each product in dummy list
-    for (var item in _cartItems) {
-      final pIndex = dummyProducts.indexWhere((p) => p.id == item.product.id);
-      if (pIndex != -1) {
-        dummyProducts[pIndex].stock = (dummyProducts[pIndex].stock - item.quantity).clamp(0, 9999);
-      }
-    }
-
-    final newOrderItems = _cartItems.map((item) => OrderItem(
-      productName: item.product.name,
-      price: item.product.price,
-      quantity: item.quantity,
-      imageUrl: item.product.imageUrl,
-    )).toList();
-
-    final newOrder = Order(
-      id: orderId,
-      storeName: store.name,
-      storeId: store.id,
-      items: newOrderItems,
+  }) async {
+    return await checkoutActiveCart(
+      ppnAmount: ppnAmount,
+      discountAmount: discountAmount,
       address: address,
       deliveryMethod: deliveryMethod,
       deliveryFee: deliveryFee,
-      voucherCode: voucherCode,
-      discountAmount: discountAmount,
-      ppnAmount: ppnAmount,
       finalTotal: finalTotal,
-      status: 'Sedang Dikemas',
-      statusTimeline: [
-        OrderMilestone(
-          status: 'Sedang Dikemas',
-          timestamp: DateTime.now(),
-          description: 'Pesanan telah berhasil dibayar. Seller sedang memproses kemasan.',
-        ),
-      ],
-      assignedDriverId: null,
-      pickupAddress: '${store.name} - ${store.location}',
-      dropoffAddress: address.fullAddress,
+      voucherCode: voucherCode,
     );
-
-    // Deduct Wallet
-    deductWallet(finalTotal, orderId);
-
-    // Decrease Voucher Quota if applicable
-    if (voucherCode != null) {
-      useVoucherQuota(voucherCode);
-    }
-
-    _orders.insert(0, newOrder);
-    clearCart(); // clear cart after checkout
-    notifyListeners();
   }
 
-  // Update order status to help verify flow manual
-  void advanceOrderStatus(String orderId) {
+  // --- SELLER STORE CONTROLS ---
+  void createStore(Store store) { dummyStores.add(store); notifyListeners(); }
+  void updateStore(Store updatedStore) {
+    final index = dummyStores.indexWhere((s) => s.id == updatedStore.id);
+    if (index != -1) { dummyStores[index] = updatedStore; notifyListeners(); }
+  }
+
+  /// Seller processes an incoming order (Sedang Dikemas -> Menunggu Pengirim)
+  Future<void> processOrder(String orderId) async {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
-      final o = _orders[index];
-      String nextStatus;
-      String desc;
+      _orders[index].status = 'Menunggu Pengirim';
+      _orders[index].statusTimeline.add(OrderMilestone(
+          status: 'Menunggu Pengirim',
+          timestamp: DateTime.now(),
+          description: 'Pesanan siap diambil kurir.'));
 
-      if (o.status == 'Sedang Dikemas') {
-        nextStatus = 'Menunggu Pengirim';
-        desc = 'Pesanan siap diambil kurir.';
-      } else if (o.status == 'Menunggu Pengirim') {
-        nextStatus = 'Sedang Dikirim';
-        desc = 'Pesanan dalam perjalanan kurir ke tujuan.';
-      } else if (o.status == 'Sedang Dikirim') {
-        nextStatus = 'Pesanan Selesai';
-        desc = 'Pesanan telah sampai dan diterima dengan baik.';
-      } else if (o.status == 'Pesanan Selesai') {
-        nextStatus = 'Dikembalikan';
-        desc = 'Pesanan diajukan komplain dan dikembalikan (refund).';
-      } else {
-        nextStatus = 'Sedang Dikemas';
-        desc = 'Pesanan di-reset untuk demo.';
+      try {
+        // 1. Update order status in DB
+        await _txRepository.updateOrderStatus(orderId, 'Menunggu Pengirim');
+        // 2. Create unassigned delivery row so drivers can discover this job
+        await _txRepository.upsertDelivery(orderId, null, 0);
+      } catch (e) {
+        debugPrint('Error syncing seller process order to DB: $e');
+      }
+      notifyListeners();
+    }
+  }
+
+  // --- DRIVER CONTROLS ---
+  void toggleDriverOnline() { _isDriverOnline = !_isDriverOnline; notifyListeners(); }
+
+  int calculateDriverEarning(Order order) {
+    double pct = order.deliveryMethod.toLowerCase() == 'instant' ? 0.8 : (order.deliveryMethod.toLowerCase() == 'next day' ? 0.7 : 0.6);
+    return (order.deliveryFee * pct).round();
+  }
+
+  /// Driver picks up/takes a delivery job
+  Future<bool> takeJob(String orderId, String driverId) async {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1 && _orders[index].assignedDriverId == null) {
+      _orders[index].assignedDriverId = driverId;
+      _orders[index].status = 'Sedang Dikirim';
+      _orders[index].statusTimeline.add(OrderMilestone(
+          status: 'Sedang Dikirim',
+          timestamp: DateTime.now(),
+          description: 'Pesanan diambil oleh kurir.'
+      ));
+
+      // Sinkronisasi status pesanan dan log penugasan kurir ke Supabase (GAP FIXED)
+      try {
+        await _txRepository.updateOrderStatus(orderId, 'Sedang Dikirim');
+        int potentialEarnings = calculateDriverEarning(_orders[index]);
+        await _txRepository.upsertDelivery(orderId, driverId, potentialEarnings);
+      } catch (e) {
+        debugPrint('Error syncing driver job assignment to DB: $e');
       }
 
-      o.status = nextStatus;
-      o.statusTimeline.add(OrderMilestone(
-        status: nextStatus,
-        timestamp: DateTime.now(),
-        description: desc,
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  /// Driver completes the delivery transaction job
+  Future<void> completeJob(String orderId) async {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      _orders[index].status = 'Pesanan Selesai';
+      _orders[index].statusTimeline.add(OrderMilestone(
+          status: 'Pesanan Selesai',
+          timestamp: DateTime.now(),
+          description: 'Pesanan selesai diserahkan ke penerima.'
       ));
+
+      // Sinkronisasi status akhir dan pencatatan pendapatan driver ke database (GAP FIXED)
+      try {
+        await _txRepository.updateOrderStatus(orderId, 'Pesanan Selesai');
+        int finalEarnings = calculateDriverEarning(_orders[index]);
+        await _txRepository.upsertDelivery(orderId, _orders[index].assignedDriverId, finalEarnings);
+      } catch (e) {
+        debugPrint('Error syncing delivery completion to DB: $e');
+      }
       notifyListeners();
     }
   }
 
-  // --- SIMULATION & OVERDUE ---
-  DateTime _simulatedDateTime = DateTime.now();
-  DateTime get simulatedDateTime => _simulatedDateTime;
+  // --- ADMIN CONTROLS & SIMULATION ---
+  Future<void> advanceOrderStatus(String orderId) async {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final current = _orders[index].status;
+      String next = current == 'Sedang Dikemas' ? 'Menunggu Pengirim' : (current == 'Menunggu Pengirim' ? 'Sedang Dikirim' : 'Pesanan Selesai');
+      _orders[index].status = next;
+      _orders[index].statusTimeline.add(OrderMilestone(
+          status: next,
+          timestamp: DateTime.now(),
+          description: 'Status diperbarui oleh admin menjadi $next'
+      ));
 
-  void simulateNextDay() {
+      try {
+        await _txRepository.updateOrderStatus(orderId, next);
+        if (next == 'Sedang Dikirim' || next == 'Pesanan Selesai') {
+          int earnings = calculateDriverEarning(_orders[index]);
+          await _txRepository.upsertDelivery(orderId, _orders[index].assignedDriverId, earnings);
+        }
+      } catch (e) {
+        debugPrint('Error admin advancing order status: $e');
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> simulateNextDay() async {
     _simulatedDateTime = _simulatedDateTime.add(const Duration(days: 1));
+
+    for (var i = 0; i < _orders.length; i++) {
+      final order = _orders[i];
+
+      // Only process non-terminal orders
+      if (order.status != 'Pesanan Selesai' && order.status != 'Dikembalikan') {
+        // SLA in hours — must match admin_overdue_page.dart exactly
+        int slaHours = 48; // Default: Regular
+        final method = order.deliveryMethod.toLowerCase();
+        if (method == 'instant') slaHours = 3;
+        else if (method == 'next day') slaHours = 24;
+
+        final durationElapsed = _simulatedDateTime.difference(order.createdAt);
+
+        // Trigger refund if SLA exceeded (hours-based, consistent with admin UI)
+        if (durationElapsed.inHours >= slaHours) {
+          order.status = 'Dikembalikan';
+          order.statusTimeline.add(OrderMilestone(
+            status: 'Dikembalikan',
+            timestamp: _simulatedDateTime,
+            description: 'Pesanan otomatis dikembalikan karena melewati batas waktu SLA ($method ${slaHours}j). Dana dikembalikan ke dompet pembeli.',
+          ));
+
+          // 1. Kirim status perubahan terbaru ke Supabase
+          try {
+            await _txRepository.updateOrderStatus(order.id, 'Dikembalikan');
+            await _txRepository.upsertDelivery(order.id, order.assignedDriverId, 0); // Reversal income driver ke 0
+          } catch (e) {
+            debugPrint('Error updating overdue order inside core pipeline: $e');
+          }
+
+          // 2. Kirim refund dana ke SEA-Wallet Pembeli jika UUID valid
+          if (_currentUser != null && order.buyerId == _currentUser!.id) {
+            _walletBalance += order.finalTotal;
+            try {
+              await _txRepository.updateWalletBalance(order.buyerId, _walletBalance, {
+                'amount': order.finalTotal,
+                'type': 'refund',
+              });
+            } catch (e) {
+              debugPrint('Error processing buyer wallet overdue automated refund: $e');
+            }
+          } else if (_txRepository.isValidUuid(order.buyerId)) {
+            try {
+              int currentBal = await _txRepository.getWalletBalance(order.buyerId);
+              await _txRepository.updateWalletBalance(order.buyerId, currentBal + order.finalTotal, {
+                'amount': order.finalTotal,
+                'type': 'refund',
+              });
+            } catch (e) {
+              debugPrint('Error processing side user refund payload: $e');
+            }
+          }
+
+          // 3. Restorasi jumlah stok barang jualan toko di database
+          for (final item in order.items) {
+            final pIdx = dummyProducts.indexWhere((p) => p.id == item.productId || p.name == item.productName);
+            if (pIdx != -1) {
+              dummyProducts[pIdx].stock += item.quantity;
+              try {
+                await _txRepository.updateProductStock(dummyProducts[pIdx].id, dummyProducts[pIdx].stock);
+              } catch (e) {
+                debugPrint('Error syncing restored inventory values back to cloud storage: $e');
+              }
+            }
+          }
+        }
+      }
+    }
     notifyListeners();
   }
 
-  void processRefund(String orderId) {
+  Future<void> processRefund(String orderId) async {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
-      final o = _orders[index];
-      o.status = 'Dikembalikan';
-      o.statusTimeline.add(OrderMilestone(
-        status: 'Dikembalikan',
-        timestamp: _simulatedDateTime,
-        description: 'Pesanan dibatalkan & dana dikembalikan (refund) oleh Admin karena keterlambatan pengiriman (SLA terlampaui).',
-      ));
+      // Idempotency guard: prevent double-refund on already-refunded orders
+      if (_orders[index].status == 'Dikembalikan') return;
+
+      _orders[index].status = 'Dikembalikan';
+      _orders[index].statusTimeline.add(OrderMilestone(
+          status: 'Dikembalikan',
+          timestamp: _simulatedDateTime,
+          description: 'Pesanan dibatalkan & dana direfund.'));
+
+      try {
+        await _txRepository.updateOrderStatus(orderId, 'Dikembalikan');
+      } catch (e) {
+        debugPrint('Error admin processing refund code sync: $e');
+      }
       notifyListeners();
     }
   }
 
-  // --- REVIEW APLIKASI STATE ---
-  final List<AppReview> _appReviews = List.from(dummyAppReviews);
-
-  List<AppReview> get appReviews => _appReviews;
-
+  // --- APP REVIEW ---
   void addAppReview(String name, double rating, String comment) {
-    final newReview = AppReview(
-      id: 'app_rev_${DateTime.now().millisecondsSinceEpoch}',
-      name: name.isEmpty ? 'Anonim' : name,
+    final reviewerName = name.isEmpty ? 'Anonim' : name;
+    // Optimistic local insert for immediate UI feedback
+    final localReview = AppReview(
+      id: 'rev_${DateTime.now().millisecondsSinceEpoch}',
+      name: reviewerName,
       rating: rating,
       comment: comment,
       date: DateTime.now(),
     );
-    _appReviews.insert(0, newReview);
+    _appReviews.insert(0, localReview);
     notifyListeners();
+
+    // Persist to Supabase asynchronously and replace local entry with DB entry on success
+    _reviewRepository
+        .insertReview(reviewerName: reviewerName, rating: rating, comment: comment)
+        .then((dbReview) {
+      if (dbReview != null) {
+        final idx = _appReviews.indexWhere((r) => r.id == localReview.id);
+        if (idx != -1) {
+          _appReviews[idx] = dbReview;
+          notifyListeners();
+        }
+      }
+    });
   }
 }

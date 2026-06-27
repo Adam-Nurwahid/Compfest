@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/reusable_widgets.dart';
+import '../../../../core/widgets/manage_roles_section.dart';
 import '../../../../data/dummy/app_state.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 class DriverProfilePage extends StatelessWidget {
   const DriverProfilePage({super.key});
@@ -134,6 +137,19 @@ class DriverProfilePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
+              // Manage Roles Section
+              Text(
+                'Peran & Akses',
+                style: AppTextStyles.label.copyWith(fontSize: 14, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              AppCard(
+                radius: 16,
+                padding: const EdgeInsets.all(16),
+                child: ManageRolesSection(),
+              ),
+              const SizedBox(height: 24),
+
               // Menu Options
               AppCard(
                 radius: 20,
@@ -171,31 +187,7 @@ class DriverProfilePage extends StatelessWidget {
                       ),
                     ),
                     
-                    if (user.roles.length > 1) ...[
-                      const Divider(height: 1, indent: 56),
-                      ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.tertiary.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.swap_horiz, color: AppColors.primary, size: 20),
-                        ),
-                        title: Text(
-                          'Ganti Mode Peran',
-                          style: AppTextStyles.label.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          'Pindah ke dashboard Buyer atau Seller',
-                          style: AppTextStyles.bodyMedium.copyWith(fontSize: 11),
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.neutral),
-                        onTap: () {
-                          context.push('/role-selection');
-                        },
-                      ),
-                    ],
+
                   ],
                 ),
               ),
@@ -206,9 +198,10 @@ class DriverProfilePage extends StatelessWidget {
                 text: 'Keluar dari Akun',
                 styleType: ButtonStyleType.outlined,
                 onPressed: () {
+                  context.read<AuthBloc>().add(LogoutRequested());
                   appState.logout();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Berhasil keluar.')),
+                    const SnackBar(duration: const Duration(seconds: 2), content: Text('Berhasil keluar.')),
                   );
                   context.go('/login');
                 },

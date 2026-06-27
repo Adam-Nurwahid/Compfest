@@ -71,7 +71,7 @@ class DriverFindJobsPage extends StatelessWidget {
                             await Future.delayed(const Duration(milliseconds: 800));
                             if (context.mounted) {
                               // Triggers provider refresh
-                              appState.notifyListeners();
+                              appState.triggerRefresh();
                             }
                           },
                           color: AppColors.primary,

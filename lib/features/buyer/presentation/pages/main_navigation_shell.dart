@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/dummy/app_state.dart';
 import '../../../landing/landing_page.dart';
@@ -39,11 +38,21 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final appState = Provider.of<AppState>(context);
     final cartItemCount = appState.cartItems.fold(0, (sum, item) => sum + item.quantity);
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        if (_currentIndex > 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
+        ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -97,6 +106,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

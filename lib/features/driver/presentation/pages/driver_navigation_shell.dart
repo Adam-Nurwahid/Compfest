@@ -42,62 +42,73 @@ class _DriverMainNavigationShellState extends State<DriverMainNavigationShell> {
       (o) => o.assignedDriverId == driverId && o.status == 'Sedang Dikirim'
     ).length;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        if (_currentIndex > 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.neutral,
-          selectedLabelStyle: AppTextStyles.label.copyWith(fontSize: 12, color: AppColors.primary),
-          unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.neutral),
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              activeIcon: Icon(Icons.search, color: AppColors.primary),
-              label: 'Cari Job',
-            ),
-            BottomNavigationBarItem(
-              icon: Badge(
-                label: activeJobCount > 0 ? Text(activeJobCount.toString()) : null,
-                isLabelVisible: activeJobCount > 0,
-                backgroundColor: AppColors.secondary,
-                child: const Icon(Icons.local_shipping_outlined),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.surface,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.neutral,
+            selectedLabelStyle: AppTextStyles.label.copyWith(fontSize: 12, color: AppColors.primary),
+            unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.neutral),
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.search_outlined),
+                activeIcon: Icon(Icons.search, color: AppColors.primary),
+                label: 'Cari Job',
               ),
-              activeIcon: Badge(
-                label: activeJobCount > 0 ? Text(activeJobCount.toString()) : null,
-                isLabelVisible: activeJobCount > 0,
-                backgroundColor: AppColors.secondary,
-                child: const Icon(Icons.local_shipping, color: AppColors.primary),
+              BottomNavigationBarItem(
+                icon: Badge(
+                  label: activeJobCount > 0 ? Text(activeJobCount.toString()) : null,
+                  isLabelVisible: activeJobCount > 0,
+                  backgroundColor: AppColors.secondary,
+                  child: const Icon(Icons.local_shipping_outlined),
+                ),
+                activeIcon: Badge(
+                  label: activeJobCount > 0 ? Text(activeJobCount.toString()) : null,
+                  isLabelVisible: activeJobCount > 0,
+                  backgroundColor: AppColors.secondary,
+                  child: const Icon(Icons.local_shipping, color: AppColors.primary),
+                ),
+                label: 'Job Aktif',
               ),
-              label: 'Job Aktif',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.history_outlined),
-              activeIcon: Icon(Icons.history, color: AppColors.primary),
-              label: 'Riwayat',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person, color: AppColors.primary),
-              label: 'Profil',
-            ),
-          ],
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.history_outlined),
+                activeIcon: Icon(Icons.history, color: AppColors.primary),
+                label: 'Riwayat',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person, color: AppColors.primary),
+                label: 'Profil',
+              ),
+            ],
+          ),
         ),
       ),
     );

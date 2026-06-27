@@ -135,10 +135,10 @@ class SellerIncomingOrdersPage extends StatelessWidget {
             onTap: () {
               context.push('/seller/order/${order.id}');
             },
-            onProcess: () {
-              appState.processOrder(order.id);
+            onProcess: () async {
+              await appState.processOrder(order.id);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                SnackBar(duration: const Duration(seconds: 2), 
                   content: Text('Pesanan ${order.id} berhasil diproses!'),
                   backgroundColor: AppColors.primary,
                 ),

@@ -17,8 +17,7 @@ class AdminDashboardPage extends StatelessWidget {
     final totalProducts = dummyProducts.length;
     
     final orders = appState.orders;
-    final totalOrders = orders.length;
-    
+
     // Status counts
     final packagingCount = orders.where((o) => o.status == 'Sedang Dikemas').length;
     final waitingCourierCount = orders.where((o) => o.status == 'Menunggu Pengirim').length;
@@ -32,7 +31,6 @@ class AdminDashboardPage extends StatelessWidget {
       final isExpress = o.deliveryMethod == 'Instant' || o.deliveryMethod == 'Next Day';
       return isExpress; // For mock purposes, express orders not finished are overdue
     }).toList();
-    final totalOverdue = overdueOrders.length;
 
     final totalActiveVouchers = appState.vouchers.where((v) => v.quotaRemaining > 0 && v.expiryDate.isAfter(DateTime.now())).length;
     final totalActivePromos = appState.promos.where((p) => p.expiryDate.isAfter(DateTime.now())).length;

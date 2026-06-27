@@ -20,7 +20,7 @@ class _AdminStoresPageState extends State<AdminStoresPage> {
     final filteredStores = dummyStores.where((store) {
       // Find owner name to search by owner too
       final owner = dummyUsers.firstWhere(
-        (u) => u.id == store.ownerId,
+        (u) => u.id == store.sellerId,
         orElse: () => User(id: '', name: 'Unknown', email: '', username: '', password: '', roles: [], activeRole: ''),
       );
 
@@ -108,7 +108,7 @@ class _AdminStoresPageState extends State<AdminStoresPage> {
 
                                 // Find owner
                                 final owner = dummyUsers.firstWhere(
-                                  (u) => u.id == store.ownerId,
+                                  (u) => u.id == store.sellerId,
                                   orElse: () => User(id: '', name: 'Pemilik Tidak Dikenal', email: '', username: '', password: '', roles: [], activeRole: ''),
                                 );
 

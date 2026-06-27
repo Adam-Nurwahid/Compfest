@@ -1,13 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/reusable_widgets.dart';
 import '../../data/dummy/app_state.dart';
 import '../../data/dummy/dummy_data.dart';
+import 'package:compfest/features/seller/data/repositories/seller_repository.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Trigger Supabase product load and sync to AppState
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final sellerRepo = context.read<SellerRepository>();
+        final appState = Provider.of<AppState>(context, listen: false);
+        final products = await sellerRepo.getAllProducts();
+        final stores = await sellerRepo.getAllStores();
+        appState.syncAllProductsAndStores(products, stores);
+      } catch (e) {
+        print('Error loading landing catalog from Supabase: $e');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -420,11 +444,14 @@ class LandingPage extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              review.name,
-                              style: AppTextStyles.label.copyWith(fontSize: 14),
-                              overflow: TextOverflow.ellipsis,
+                            Expanded(
+                              child: Text(
+                                review.name,
+                                style: AppTextStyles.label.copyWith(fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             RatingStars(rating: review.rating, size: 14),
                           ],
                         ),

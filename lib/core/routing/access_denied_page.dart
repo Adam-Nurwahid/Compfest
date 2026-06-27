@@ -1,9 +1,13 @@
+// lib/core/routing/access_denied_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/reusable_widgets.dart';
 import '../../data/dummy/app_state.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/auth/presentation/bloc/auth_event.dart';
 
 class AccessDeniedPage extends StatelessWidget {
   final String requiredRole;
@@ -18,7 +22,6 @@ class AccessDeniedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final isSellerRequired = requiredRole == 'Seller';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -71,15 +74,14 @@ class AccessDeniedPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Switch Role Button
-              if (appState.availableRoles.length > 1) ...[
+              if (appState.availableRoles.map((r) => r.toLowerCase()).contains(requiredRole.toLowerCase())) ...[
                 AppButton(
                   text: 'Ganti ke Mode $requiredRole',
                   onPressed: () {
+                    context.read<AuthBloc>().add(RoleSelected(targetRole: requiredRole.toLowerCase()));
                     appState.setActiveRole(requiredRole);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Switched to $requiredRole Mode')),
+                      SnackBar(duration: const Duration(seconds: 2), content: Text('Switched to $requiredRole Mode')),
                     );
                     if (requiredRole == 'Seller') {
                       context.go('/seller/dashboard');
@@ -93,7 +95,6 @@ class AccessDeniedPage extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
 
-              // Choose Roles Page Button
               AppButton(
                 text: 'Pilih Role Lainnya',
                 styleType: ButtonStyleType.outlined,
@@ -103,13 +104,14 @@ class AccessDeniedPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Back to Dashboard / Landing
               TextButton(
                 onPressed: () {
                   if (currentRole == 'Seller') {
                     context.go('/seller/dashboard');
                   } else if (currentRole == 'Driver') {
                     context.go('/driver/find-jobs');
+                  } else if (currentRole == 'Admin') {
+                    context.go('/admin/dashboard');
                   } else {
                     context.go('/landing');
                   }

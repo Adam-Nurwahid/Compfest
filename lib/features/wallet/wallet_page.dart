@@ -96,7 +96,7 @@ class _WalletPageState extends State<WalletPage> {
                   final int? amount = int.tryParse(_amountController.text.trim());
                   if (amount == null || amount <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      const SnackBar(duration: const Duration(seconds: 2), 
                         content: Text('Masukkan jumlah nominal angka yang valid!'),
                         backgroundColor: AppColors.danger,
                       ),
@@ -108,7 +108,7 @@ class _WalletPageState extends State<WalletPage> {
                   Navigator.pop(context); // Close bottomsheet
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    SnackBar(duration: const Duration(seconds: 2), 
                       content: Text(
                         'Top Up saldo Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} berhasil!',
                       ),

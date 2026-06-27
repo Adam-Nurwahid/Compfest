@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/reusable_widgets.dart';
-import '../../../../data/dummy/app_state.dart';
 import '../../../../data/dummy/dummy_data.dart';
-import '../../../../data/models/models.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});

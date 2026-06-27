@@ -1,30 +1,43 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:provider/provider.dart';
 import 'package:compfest/main.dart';
+import 'package:compfest/data/dummy/app_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUpAll(() async {
+    const MethodChannel channel = MethodChannel('plugins.flutter.io/shared_preferences');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      if (methodCall.method == 'getAll') {
+        return <String, dynamic>{};
+      }
+      return null;
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Initialize Supabase if not already initialized
+    try {
+      await Supabase.initialize(
+        url: 'https://uhmlrzoahlkbzisgxcst.supabase.co/',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVobWxyem9haGxrYnppc2d4Y3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDg1NjMsImV4cCI6MjA5Nzc4NDU2M30.wIOjT-VDuKathQ8GMSrmAKXfFQ6jT0aoZczktZ4HLSI',
+        authOptions: const FlutterAuthClientOptions(
+          localStorage: EmptyLocalStorage(),
+        ),
+      );
+    } catch (_) {}
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('SEAPEDIA App Smoke Test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (context) => AppState.instance,
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the title SEAPEDIA is rendered in the app
+    expect(find.text('SEAPEDIA'), findsWidgets);
   });
 }

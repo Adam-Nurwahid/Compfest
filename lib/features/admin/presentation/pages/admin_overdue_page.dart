@@ -329,11 +329,11 @@ class _AdminOverduePageState extends State<AdminOverduePage> {
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
-                appState.processRefund(order.id);
+              onPressed: () async {
+                await appState.processRefund(order.id);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Refund berhasil diproses untuk Order ${order.id}!')),
+                  SnackBar(duration: const Duration(seconds: 2), content: Text('Refund berhasil diproses untuk Order ${order.id}!')),
                 );
               },
               style: ElevatedButton.styleFrom(

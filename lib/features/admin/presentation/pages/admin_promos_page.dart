@@ -165,7 +165,6 @@ class _AdminPromosPageState extends State<AdminPromosPage> {
                               itemBuilder: (context, index) {
                                 final p = filteredPromos[index];
                                 final isExpired = p.expiryDate.isBefore(DateTime.now());
-                                final isActive = !isExpired;
 
                                 String statusStr = 'Aktif';
                                 Color statusColor = Colors.green;
@@ -484,7 +483,7 @@ class _AdminPromosPageState extends State<AdminPromosPage> {
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Promo ${newPromo.code} berhasil dibuat!')),
+                        SnackBar(duration: const Duration(seconds: 2), content: Text('Promo ${newPromo.code} berhasil dibuat!')),
                       );
                     }
                   },

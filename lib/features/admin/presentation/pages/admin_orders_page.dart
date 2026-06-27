@@ -419,8 +419,8 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
             ),
             child: AppButton(
               text: 'Simulasikan Status Berikutnya',
-              onPressed: () {
-                appState.advanceOrderStatus(order.id);
+              onPressed: () async {
+                await appState.advanceOrderStatus(order.id);
                 // Refresh local state pointer
                 setState(() {
                   _selectedOrder = appState.orders.firstWhere((o) => o.id == order.id);

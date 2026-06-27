@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/dummy/app_state.dart';
 import '../../../../data/models/models.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 // Import Admin pages
 import 'admin_dashboard_page.dart';
@@ -241,6 +243,7 @@ class _AdminMainNavigationShellState extends State<AdminMainNavigationShell> {
         PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'logout') {
+              context.read<AuthBloc>().add(LogoutRequested());
               appState.logout();
               context.go('/login');
             } else if (value == 'role') {
@@ -364,6 +367,7 @@ class _AdminMainNavigationShellState extends State<AdminMainNavigationShell> {
               children: [
                 IconButton(
                   onPressed: () {
+                    context.read<AuthBloc>().add(LogoutRequested());
                     appState.logout();
                     context.go('/login');
                   },

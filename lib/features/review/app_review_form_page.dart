@@ -27,7 +27,7 @@ class _AppReviewFormPageState extends State<AppReviewFormPage> {
   void _submitReview() {
     if (_commentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Komentar review tidak boleh kosong!'),
           backgroundColor: AppColors.danger,
         ),
@@ -43,7 +43,7 @@ class _AppReviewFormPageState extends State<AppReviewFormPage> {
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      const SnackBar(duration: const Duration(seconds: 2), 
         content: Text('Terima kasih! Review Anda telah disimpan.'),
         backgroundColor: AppColors.primary,
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/reusable_widgets.dart';
@@ -43,8 +44,22 @@ class OrderDetailPage extends StatelessWidget {
     final formattedSubtotal = subtotal
         .toString()
         .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-
-    return Scaffold(
+    return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (context.mounted) {
+            // Sinkronisasi tombol back fisik device agar sama pintarnya dengan AppBar back button
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else if (GoRouter.of(context).canPop()) {
+              GoRouter.of(context).pop();
+            } else {
+              context.go('/orders');
+            }
+          }
+        },
+        child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: CustomAppBar(
         title: 'Detail Transaksi',
@@ -52,104 +67,57 @@ class OrderDetailPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: AppColors.textPrimary),
             onPressed: () {
+              ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bantuan pesanan dinonaktifkan di demo ini.')),
+                const SnackBar(duration: const Duration(seconds: 2), content: Text('Bantuan pesanan dinonaktifkan di demo ini.')),
               );
             },
           ),
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Order ID Header Card
-                    _buildOrderHeader(order),
-                    const SizedBox(height: 20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Order ID Header Card
+              _buildOrderHeader(order),
+              const SizedBox(height: 20),
 
-                    // Delivery Timeline Component
-                    AppCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      child: OrderStatusTimeline(
-                        milestones: order.statusTimeline,
-                        currentStatus: order.status,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Products List Details
-                    _buildProductSection(order),
-                    const SizedBox(height: 20),
-
-                    // Shipping details Address
-                    _buildShippingAddressSection(order),
-                    const SizedBox(height: 20),
-
-                    // Receipt Invoice Calculations Card
-                    _buildReceiptSection(
-                      subtotal: subtotal,
-                      formattedSubtotal: formattedSubtotal,
-                      order: order,
-                      formattedFee: formattedFee,
-                      formattedDiscount: formattedDiscount,
-                      formattedPpn: formattedPpn,
-                      formattedTotal: formattedTotal,
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+              // Delivery Timeline Component
+              AppCard(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: OrderStatusTimeline(
+                  milestones: order.statusTimeline,
+                  currentStatus: order.status,
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
 
-            // Bottom Simulator controls for testing order lifecycles
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: const Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+              // Products List Details
+              _buildProductSection(order),
+              const SizedBox(height: 20),
+
+              // Shipping details Address
+              _buildShippingAddressSection(order),
+              const SizedBox(height: 20),
+
+              // Receipt Invoice Calculations Card
+              _buildReceiptSection(
+                subtotal: subtotal,
+                formattedSubtotal: formattedSubtotal,
+                order: order,
+                formattedFee: formattedFee,
+                formattedDiscount: formattedDiscount,
+                formattedPpn: formattedPpn,
+                formattedTotal: formattedTotal,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.secondary),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Mode Demo: Gunakan tombol di bawah untuk menyimulasikan siklus status pengiriman.',
-                          style: AppTextStyles.bodyMedium.copyWith(fontSize: 10, fontStyle: FontStyle.italic),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  AppButton(
-                    text: 'Simulasikan Status Selanjutnya',
-                    styleType: ButtonStyleType.secondary,
-                    onPressed: () {
-                      appState.advanceOrderStatus(order.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Status pesanan berhasil diubah menjadi: "${appState.orders[orderIndex].status}"'),
-                          backgroundColor: AppColors.primary,
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildOrderHeader(Order order) {

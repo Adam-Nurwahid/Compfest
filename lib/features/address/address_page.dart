@@ -129,7 +129,7 @@ class _AddressPageState extends State<AddressPage> {
 
                         if (name.isEmpty || phone.isEmpty || fullAddr.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            const SnackBar(duration: const Duration(seconds: 2), 
                               content: Text('Semua kolom formulir harus diisi!'),
                               backgroundColor: AppColors.danger,
                             ),
@@ -158,7 +158,7 @@ class _AddressPageState extends State<AddressPage> {
 
                         Navigator.pop(context); // Close bottomsheet
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          SnackBar(duration: const Duration(seconds: 2), 
                             content: Text(
                               isEdit ? 'Alamat berhasil diubah.' : 'Alamat baru berhasil ditambahkan.',
                             ),
@@ -252,7 +252,7 @@ class _AddressPageState extends State<AddressPage> {
                                         onPressed: () {
                                           appState.deleteAddress(addr.id);
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Alamat berhasil dihapus.')),
+                                            const SnackBar(duration: const Duration(seconds: 2), content: Text('Alamat berhasil dihapus.')),
                                           );
                                         },
                                         constraints: const BoxConstraints(),
@@ -281,7 +281,7 @@ class _AddressPageState extends State<AddressPage> {
                                     onPressed: () {
                                       appState.setDefaultAddress(addr.id);
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Alamat utama berhasil diubah.')),
+                                        const SnackBar(duration: const Duration(seconds: 2), content: Text('Alamat utama berhasil diubah.')),
                                       );
                                     },
                                     child: const Text('Jadikan Utama'),

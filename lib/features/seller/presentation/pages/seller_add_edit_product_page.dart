@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -6,6 +7,9 @@ import '../../../../core/widgets/reusable_widgets.dart';
 import '../../../../data/dummy/app_state.dart';
 import '../../../../data/dummy/dummy_data.dart';
 import '../../../../data/models/models.dart';
+import '../bloc/seller_bloc.dart';
+import '../bloc/seller_event.dart';
+import '../bloc/seller_state.dart';
 import 'seller_widgets.dart';
 
 class SellerAddEditProductPage extends StatefulWidget {
@@ -116,7 +120,7 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
 
     if (name.isEmpty || priceStr.isEmpty || stockStr.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Semua kolom wajib diisi!'),
           backgroundColor: AppColors.danger,
         ),
@@ -126,7 +130,7 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
 
     if (name.length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Nama produk minimal 5 karakter!'),
           backgroundColor: AppColors.danger,
         ),
@@ -137,7 +141,7 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
     final price = int.tryParse(priceStr);
     if (price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Harga harus berupa angka dan lebih besar dari 0!'),
           backgroundColor: AppColors.danger,
         ),
@@ -148,7 +152,7 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
     final stock = int.tryParse(stockStr);
     if (stock == null || stock < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Stok harus berupa angka dan tidak boleh negatif!'),
           backgroundColor: AppColors.danger,
         ),
@@ -159,38 +163,29 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
     final store = appState.currentUserStore;
     if (store == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Toko tidak ditemukan. Gagal menyimpan produk.')),
+        const SnackBar(duration: const Duration(seconds: 2), content: Text('Toko tidak ditemukan. Gagal menyimpan produk.')),
       );
       return;
     }
 
     if (_existingProduct == null) {
-      // 1. ADD NEW PRODUCT
-      final newProduct = Product(
-        id: 'prod_${store.id}_${DateTime.now().millisecondsSinceEpoch}',
-        storeId: store.id,
-        name: name,
-        price: price,
-        stock: stock,
-        description: description,
-        imageUrl: _selectedImageUrl,
-        category: _selectedCategory,
-        rating: 5.0,
-        reviewCount: 0,
-      );
-
-      appState.addProduct(newProduct);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Produk berhasil ditambahkan!'),
-          backgroundColor: AppColors.primary,
+      // 1. ADD NEW PRODUCT via SellerBloc
+      context.read<SellerBloc>().add(
+        CreateProductEvent(
+          storeId: store.id,
+          name: name,
+          description: description,
+          price: price,
+          stock: stock,
+          category: _selectedCategory,
+          imageUrl: _selectedImageUrl,
         ),
       );
     } else {
-      // 2. UPDATE EXISTING PRODUCT
+      // 2. UPDATE EXISTING PRODUCT via SellerBloc
       if (_existingProduct!.storeId != store.id) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          const SnackBar(duration: const Duration(seconds: 2), 
             content: Text('Akses Ditolak: Anda tidak dapat mengedit produk toko lain!'),
             backgroundColor: AppColors.danger,
           ),
@@ -198,29 +193,19 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
         return;
       }
 
-      final updatedProduct = Product(
-        id: _existingProduct!.id,
-        storeId: _existingProduct!.storeId,
-        name: name,
-        price: price,
-        stock: stock,
-        description: description,
-        imageUrl: _selectedImageUrl,
-        category: _selectedCategory,
-        rating: _existingProduct!.rating,
-        reviewCount: _existingProduct!.reviewCount,
-      );
-
-      appState.updateProduct(updatedProduct);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Produk berhasil diperbarui!'),
-          backgroundColor: AppColors.primary,
+      context.read<SellerBloc>().add(
+        UpdateProductEvent(
+          id: _existingProduct!.id,
+          storeId: _existingProduct!.storeId,
+          name: name,
+          description: description,
+          price: price,
+          stock: stock,
+          category: _selectedCategory,
+          imageUrl: _selectedImageUrl,
         ),
       );
     }
-
-    context.pop();
   }
 
   @override
@@ -234,160 +219,185 @@ class _SellerAddEditProductPageState extends State<SellerAddEditProductPage> {
         title: isEditMode ? 'Edit Produk' : 'Tambah Produk Baru',
         store: appState.currentUserStore,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEditMode ? 'Ubah data produk kelautan Anda.' : 'Lengkapi detail produk kelautan yang ingin Anda jual.',
-                style: AppTextStyles.bodyMedium,
+      body: BlocConsumer<SellerBloc, SellerState>(
+        listener: (context, state) {
+          if (state is ProductCrudSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(duration: const Duration(seconds: 2), 
+                content: Text(state.message),
+                backgroundColor: AppColors.primary,
               ),
-              const SizedBox(height: 24),
-
-              // Name Field
-              AppTextField(
-                label: 'Nama Produk',
-                hintText: 'contoh: Wet Suit Premium 3mm',
-                controller: _nameController,
+            );
+            context.pop();
+          } else if (state is ProductsError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(duration: const Duration(seconds: 2), 
+                content: Text(state.message),
+                backgroundColor: AppColors.danger,
               ),
-              const SizedBox(height: 20),
+            );
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is ProductsLoading;
 
-              // Price & Stock row
-              Row(
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: AppTextField(
-                      label: 'Harga (Rupiah)',
-                      hintText: 'contoh: 250000',
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
+                  Text(
+                    isEditMode ? 'Ubah data produk kelautan Anda.' : 'Lengkapi detail produk kelautan yang ingin Anda jual.',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Name Field
+                  AppTextField(
+                    label: 'Nama Produk',
+                    hintText: 'contoh: Wet Suit Premium 3mm',
+                    controller: _nameController,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Price & Stock row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AppTextField(
+                          label: 'Harga (Rupiah)',
+                          hintText: 'contoh: 250000',
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AppTextField(
+                          label: 'Jumlah Stok',
+                          hintText: 'contoh: 15',
+                          controller: _stockController,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Category dropdown-like choice
+                  Text(
+                    'Kategori Produk',
+                    style: AppTextStyles.label.copyWith(fontSize: 13, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: _categories.map((cat) {
+                      final isSelected = _selectedCategory == cat;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: ChoiceChip(
+                          label: Text(cat),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _selectedCategory = cat;
+                              });
+                            }
+                          },
+                          selectedColor: AppColors.primary,
+                          backgroundColor: AppColors.surface,
+                          labelStyle: AppTextStyles.label.copyWith(
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                            fontSize: 13,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.primary : AppColors.border,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Description Field
+                  AppTextField(
+                    label: 'Deskripsi Detail Produk',
+                    hintText: 'Jelaskan keunggulan, spesifikasi, dan material produk kelautan Anda...',
+                    controller: _descriptionController,
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Image selector (Dummy Gallery)
+                  Text(
+                    'Pilih Gambar Produk (Demo)',
+                    style: AppTextStyles.label.copyWith(fontSize: 13, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 90,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _mockImages.length,
+                      itemBuilder: (context, index) {
+                        final img = _mockImages[index];
+                        final isSelected = _selectedImageUrl == img['url'];
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedImageUrl = img['url']!;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : AppColors.border,
+                                width: isSelected ? 3 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(13),
+                              child: Image.network(
+                                img['url']!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: AppTextField(
-                      label: 'Jumlah Stok',
-                      hintText: 'contoh: 15',
-                      controller: _stockController,
-                      keyboardType: TextInputType.number,
-                    ),
+                  const SizedBox(height: 32),
+
+                  // Submit Buttons
+                  AppButton(
+                    text: isEditMode ? 'Simpan Perubahan' : 'Tambah Produk Sekarang',
+                    isLoading: isLoading,
+                    onPressed: () => _saveProduct(appState),
+                  ),
+                  const SizedBox(height: 12),
+                  AppButton(
+                    text: 'Batal',
+                    styleType: ButtonStyleType.outlined,
+                    onPressed: isLoading ? null : () => context.pop(),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // Category dropdown-like choice
-              Text(
-                'Kategori Produk',
-                style: AppTextStyles.label.copyWith(fontSize: 13, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: _categories.map((cat) {
-                  final isSelected = _selectedCategory == cat;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: ChoiceChip(
-                      label: Text(cat),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() {
-                            _selectedCategory = cat;
-                          });
-                        }
-                      },
-                      selectedColor: AppColors.primary,
-                      backgroundColor: AppColors.surface,
-                      labelStyle: AppTextStyles.label.copyWith(
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
-                        fontSize: 13,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: isSelected ? AppColors.primary : AppColors.border,
-                          width: 1.0,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-
-              // Description Field
-              AppTextField(
-                label: 'Deskripsi Detail Produk',
-                hintText: 'Jelaskan keunggulan, spesifikasi, dan material produk kelautan Anda...',
-                controller: _descriptionController,
-                maxLines: 4,
-              ),
-              const SizedBox(height: 20),
-
-              // Image selector (Dummy Gallery)
-              Text(
-                'Pilih Gambar Produk (Demo)',
-                style: AppTextStyles.label.copyWith(fontSize: 13, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 90,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _mockImages.length,
-                  itemBuilder: (context, index) {
-                    final img = _mockImages[index];
-                    final isSelected = _selectedImageUrl == img['url'];
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedImageUrl = img['url']!;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isSelected ? AppColors.primary : AppColors.border,
-                            width: isSelected ? 3 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(13),
-                          child: Image.network(
-                            img['url']!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Submit Buttons
-              AppButton(
-                text: isEditMode ? 'Simpan Perubahan' : 'Tambah Produk Sekarang',
-                onPressed: () => _saveProduct(appState),
-              ),
-              const SizedBox(height: 12),
-              AppButton(
-                text: 'Batal',
-                styleType: ButtonStyleType.outlined,
-                onPressed: () => context.pop(),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

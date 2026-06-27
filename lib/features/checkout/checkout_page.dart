@@ -111,37 +111,57 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 style: AppTextStyles.headlineMedium.copyWith(fontSize: 18),
               ),
               const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: appState.addresses.length,
-                  itemBuilder: (context, index) {
-                    final addr = appState.addresses[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                      title: Text(
-                        '${addr.receiverName} (${addr.phoneNumber})',
-                        style: AppTextStyles.label.copyWith(fontSize: 14),
+              if (appState.addresses.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.location_off_outlined, size: 48, color: AppColors.neutral),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Belum ada alamat tersimpan.',
+                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 13, color: AppColors.neutral),
                       ),
-                      subtitle: Text(
-                        addr.fullAddress,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Silakan tambah alamat terlebih dahulu.',
+                        style: AppTextStyles.bodyMedium.copyWith(fontSize: 11, color: AppColors.neutral),
                       ),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                      onTap: () {
-                        setState(() {
-                          _customSelectedAddress = addr;
-                        });
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
+                    ],
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: appState.addresses.length,
+                    itemBuilder: (context, index) {
+                      final addr = appState.addresses[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                        title: Text(
+                          '${addr.receiverName} (${addr.phoneNumber})',
+                          style: AppTextStyles.label.copyWith(fontSize: 14),
+                        ),
+                        subtitle: Text(
+                          addr.fullAddress,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () {
+                          setState(() {
+                            _customSelectedAddress = addr;
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
               const SizedBox(height: 12),
               AppButton(
-                text: 'Kelola Alamat',
+                text: appState.addresses.isEmpty ? 'Tambah Alamat Baru' : 'Kelola Alamat',
                 styleType: ButtonStyleType.outlined,
                 onPressed: () {
                   Navigator.pop(context);
@@ -155,15 +175,53 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  void _processPayment(AppState appState, Address address, int ppn, int total) {
-    // Generate order ID for confirmation dialog
-    final orderId = 'ORD-${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+  String? _validateCheckout(AppState appState) {
+    if (!appState.isLoggedIn) return 'Anda harus login terlebih dahulu.';
+    if (appState.activeRole.toLowerCase() != 'buyer') return 'Hanya pembeli (Buyer) yang dapat melakukan checkout.';
+    if (appState.cartItems.isEmpty) return 'Keranjang belanja kosong.';
+    if (appState.cartStore == null) return 'Data toko tidak ditemukan.';
 
-    setState(() {
-      _placedOrderId = orderId;
-    });
+    // Single-store rule is already enforced by AppState.addToCart
+    final address = _customSelectedAddress ?? appState.defaultAddress;
+    final addrText = address.fullAddress.trim();
+    if (address.id == 'default' && (addrText.isEmpty || addrText == 'Belum ada alamat disimpan')) {
+      return 'Silakan pilih atau tambahkan alamat pengiriman sebelum melanjutkan checkout.';
+    }
 
-    appState.placeOrder(
+    // Stock validation
+    for (final item in appState.cartItems) {
+      if (item.product.stock < item.quantity) {
+        return 'Stok "${item.product.name}" tidak mencukupi (tersedia ${item.product.stock}, diminta ${item.quantity}).';
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _processPayment(AppState appState, Address address, int ppn, int total) async {
+    // Pre-validation
+    final validationError = _validateCheckout(appState);
+    if (validationError != null) {
+      if (!mounted) return;
+      final isAddressError = validationError.contains('alamat');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 3),
+          content: Text(validationError),
+          backgroundColor: AppColors.danger,
+          action: isAddressError
+              ? SnackBarAction(
+                  label: 'Kelola Alamat',
+                  textColor: Colors.white,
+                  onPressed: () => context.push('/addresses'),
+                )
+              : null,
+        ),
+      );
+      return;
+    }
+
+    final result = await appState.placeOrder(
       address: address,
       deliveryMethod: _selectedDeliveryMethod,
       deliveryFee: _deliveryFee,
@@ -173,9 +231,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
       finalTotal: total,
     );
 
-    setState(() {
-      _isOrderSuccess = true;
-    });
+    if (!mounted) return;
+    if (result.error == null) {
+      setState(() {
+        _isOrderSuccess = true;
+        _placedOrderId = result.orderId ?? '';
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 4),
+          content: Text(result.error!),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 
   @override
@@ -476,7 +546,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 // Direct action to top up
                                 appState.topUp(finalTotal - appState.walletBalance + 50000); // Top up exact lack plus buffer
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Top up otomatis berhasil ditambahkan! Saldo mencukupi.')),
+                                  const SnackBar(duration: const Duration(seconds: 2), content: Text('Top up otomatis berhasil ditambahkan! Saldo mencukupi.')),
                                 );
                               },
                               child: Text('Top Up Cepat', style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 11)),
@@ -510,8 +580,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
               child: AppButton(
                 text: 'Bayar Sekarang',
                 onPressed: hasEnoughBalance
-                    ? () {
-                        _processPayment(appState, selectedAddress, ppnAmount, finalTotal);
+                    ? () async {
+                        await _processPayment(appState, selectedAddress, ppnAmount, finalTotal);
                       }
                     : null,
               ),

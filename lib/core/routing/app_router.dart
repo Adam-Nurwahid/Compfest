@@ -31,6 +31,73 @@ import '../../features/admin/presentation/pages/admin_shell.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/landing',
+  refreshListenable: AppState.instance,
+  redirect: (context, state) {
+    final appState = AppState.instance;
+    final loc = state.matchedLocation;
+
+    // 1. Not logged in redirection
+    if (!appState.isLoggedIn) {
+      // Allow guest pages
+      final isGuestAllowed = loc == '/landing' ||
+          loc == '/catalog' ||
+          loc == '/login' ||
+          loc == '/register' ||
+          loc.startsWith('/product/') ||
+          loc.startsWith('/store/');
+      if (!isGuestAllowed) {
+        return '/login';
+      }
+      return null;
+    }
+
+    // 2. Logged in, auth pages redirection
+    if (loc == '/login' || loc == '/register') {
+      final role = appState.activeRole.toLowerCase();
+      if (role == 'seller') return '/seller/dashboard';
+      if (role == 'driver') return '/driver/find-jobs';
+      if (role == 'admin') return '/admin/dashboard';
+      return '/landing';
+    }
+
+    // 3. Role-based guard redirection
+    final role = appState.activeRole.toLowerCase();
+    
+    if (role == 'seller') {
+      final isAllowed = loc.startsWith('/seller') || 
+          loc == '/profile' || 
+          loc == '/role-selection' || 
+          loc.startsWith('/product/') || 
+          loc.startsWith('/store/');
+      if (!isAllowed) {
+        return '/seller/dashboard';
+      }
+    } else if (role == 'driver') {
+      final isAllowed = loc.startsWith('/driver') || 
+          loc == '/profile' || 
+          loc == '/role-selection';
+      if (!isAllowed) {
+        return '/driver/find-jobs';
+      }
+    } else if (role == 'admin') {
+      final isAllowed = loc.startsWith('/admin') || 
+          loc == '/profile' || 
+          loc == '/role-selection';
+      if (!isAllowed) {
+        return '/admin/dashboard';
+      }
+    } else {
+      // Buyer
+      final isForbidden = loc.startsWith('/seller') || 
+          loc.startsWith('/driver') || 
+          loc.startsWith('/admin');
+      if (isForbidden) {
+        return '/landing';
+      }
+    }
+
+    return null;
+  },
   routes: [
     // --- MAIN SHELL ROUTING (indexed stack tabs) ---
     GoRoute(
@@ -165,6 +232,7 @@ final GoRouter appRouter = GoRouter(
       path: '/submit-review',
       builder: (context, state) => const RoleGuard(
         requiredRole: 'Buyer',
+        allowGuest: true,
         child: AppReviewFormPage(),
       ),
     ),

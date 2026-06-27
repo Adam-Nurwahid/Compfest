@@ -16,15 +16,15 @@ class ProductDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    // Find the product in dummy list
+    // Menemukan produk di dalam daftar dummy
     final product = dummyProducts.firstWhere(
-      (p) => p.id == productId,
+          (p) => p.id == productId,
       orElse: () => dummyProducts.first,
     );
 
-    // Find the store
+    // Menemukan toko terkait produk
     final store = dummyStores.firstWhere(
-      (s) => s.id == product.storeId,
+          (s) => s.id == product.storeId,
       orElse: () => dummyStores.first,
     );
 
@@ -35,7 +35,8 @@ class ProductDetailPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textPrimary),
-            onPressed: () => context.go('/cart'),
+            // PERBAIKAN: Mengubah context.go menjadi context.push untuk mengamankan tumpukan rute back
+            onPressed: () => context.push('/cart'),
           ),
         ],
       ),
@@ -47,7 +48,7 @@ class ProductDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Product Image
+                    // 1. Gambar Produk
                     Container(
                       width: double.infinity,
                       height: 280,
@@ -65,13 +66,12 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                     ),
 
-                    // 2. Info Block
+                    // 2. Blok Informasi Produk
                     Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Price & Stock row
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -100,14 +100,12 @@ class ProductDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
 
-                          // Product Name
                           Text(
                             product.name,
                             style: AppTextStyles.headlineMedium.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
 
-                          // Rating and category row
                           Row(
                             children: [
                               RatingStars(rating: product.rating, size: 16),
@@ -129,7 +127,7 @@ class ProductDetailPage extends StatelessWidget {
                           ),
                           const Divider(height: 32),
 
-                          // 3. Store Block
+                          // 3. Blok Informasi Toko
                           Row(
                             children: [
                               CircleAvatar(
@@ -171,7 +169,7 @@ class ProductDetailPage extends StatelessWidget {
                           ),
                           const Divider(height: 32),
 
-                          // 4. Description Block
+                          // 4. Deskripsi Produk
                           Text(
                             'Deskripsi Produk',
                             style: AppTextStyles.label.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
@@ -202,7 +200,6 @@ class ProductDetailPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Chat button
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.border),
@@ -212,22 +209,21 @@ class ProductDetailPage extends StatelessWidget {
                       icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Fitur chat ke seller dinonaktifkan di demo ini.')),
+                          const SnackBar(duration: const Duration(seconds: 2), content: Text('Fitur chat ke seller dinonaktifkan di demo ini.')),
                         );
                       },
                     ),
                   ),
                   const SizedBox(width: 16),
 
-                  // Add to Cart
                   Expanded(
                     child: AppButton(
                       text: 'Tambah ke Keranjang',
                       onPressed: product.stock > 0
                           ? () {
-                              _handleAddToCart(context, appState, product, store);
-                            }
-                          : null, // Disabled if stock is 0
+                        _handleAddToCart(context, appState, product, store);
+                      }
+                          : null,
                     ),
                   ),
                 ],
@@ -240,10 +236,11 @@ class ProductDetailPage extends StatelessWidget {
   }
 
   void _handleAddToCart(BuildContext context, AppState appState, Product product, Store store) {
-    // 1. Check logged in
     if (!appState.isLoggedIn) {
+      // PERBAIKAN: Bersihkan snackbar lama sebelum menampilkan informasi proteksi auth
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        const SnackBar(duration: const Duration(seconds: 2), 
           content: Text('Anda harus masuk sebagai Pembeli terlebih dahulu.'),
           backgroundColor: AppColors.secondary,
         ),
@@ -252,23 +249,24 @@ class ProductDetailPage extends StatelessWidget {
       return;
     }
 
-    // 2. Add to Cart
     final success = appState.addToCart(product);
 
     if (success) {
+      // PERBAIKAN: clearSnackBars menjamin umpan balik langsung muncul secara instan (Fix Issue Delay)
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        SnackBar(duration: const Duration(seconds: 2), 
           content: Text('${product.name} berhasil ditambahkan ke keranjang.'),
           backgroundColor: AppColors.primary,
           action: SnackBarAction(
             label: 'Lihat',
             textColor: Colors.white,
-            onPressed: () => context.go('/cart'),
+            // PERBAIKAN: Mengubah context.go menjadi context.push agar tombol back di halaman keranjang mengarah balik ke sini
+            onPressed: () => context.push('/cart'),
           ),
         ),
       );
     } else {
-      // Store conflict! Show warning dialog
       final existingStoreName = appState.cartStore?.name ?? 'Toko Lain';
       showDialog(
         context: context,
@@ -277,7 +275,7 @@ class ProductDetailPage extends StatelessWidget {
             title: const Text('Ganti Keranjang?'),
             content: Text(
               'Keranjang belanja Anda saat ini berisi produk dari [$existingStoreName].\n\n'
-              'Menambahkan produk dari [${store.name}] akan mengosongkan keranjang belanja Anda yang lain. Lanjutkan?',
+                  'Menambahkan produk dari [${store.name}] akan mengosongkan keranjang belanja Anda yang lain. Lanjutkan?',
             ),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             actions: [
@@ -292,10 +290,13 @@ class ProductDetailPage extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Tutup dialog
                   appState.addToCart(product, forceClear: true);
+
+                  // PERBAIKAN: Tampilkan pesan feedback instan setelah reset paksa isi keranjang sukses dilakukan
+                  ScaffoldMessenger.of(context).clearSnackBars();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    SnackBar(duration: const Duration(seconds: 2), 
                       content: Text('Keranjang dikosongkan dan ditambahkan ${product.name}.'),
                       backgroundColor: AppColors.primary,
                     ),
